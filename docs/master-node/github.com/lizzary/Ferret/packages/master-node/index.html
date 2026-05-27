@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="doc2go">
+    <link href="../../../../../_/css/main.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../../../../_/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../../_/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../../_/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="../../../../../_/icons/favicon.ico"><title>docgentest</title>
+</head>
+  <body>
+    <nav>
+        <a href="../../../..">github.com</a>/<a href="../../..">lizzary</a>/<a href="../..">Ferret</a>/<a href="..">packages</a>/master-node<span class="navbar-right">
+          <a href="../../../../..">Root</a> | <a href="#pkg-index">Index</a></span>
+      </nav>
+    <main>
+<h2 id="pkg-overview">package docgentest</h2>
+
+<pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="nx">docgentest</span><span class="w"> </span><span class="s">&#34;github.com/lizzary/Ferret/packages/master-node&#34;</span></pre>
+<p>Package docgentest 提供了一系列用于演示文档生成的工具函数和类型。
+<p>这个包包含两个主要的子功能：
+<ul>
+<li>字符串处理：如反转、分割、统计等。
+<li>基础计算：如加减乘除，以及安全的除法。
+</ul>
+<p>所有导出的标识符都遵循 Go 文档注释规范，适合用作文档生成工具的测试素材。
+<h3 id="pkg-index">Index</h3>
+<ul>
+  <li><a href="#pkg-variables">Variables</a></li><li><a href="#Add">func Add(a, b int) int</a></li>
+  <li><a href="#Concat">func Concat(strs ...string) string</a> <span class="deprecated-tag">deprecated</span></li>
+  <li><a href="#Divide">func Divide(a, b int) (int, error)</a></li>
+  <li><a href="#Multiply">func Multiply(a, b int) int</a></li>
+  <li><a href="#Reverse">func Reverse(s string) string</a></li>
+  <li><a href="#Subtract">func Subtract(a, b int) int</a></li>
+  <li><a href="#WordCount">func WordCount(s string) int</a></li>
+  <li>
+      <a href="#Calculator">type Calculator</a>
+      <ul>
+          <li><a href="#NewCalculator">func NewCalculator(initial int) *Calculator</a></li>
+          <li><a href="#Calculator.Add">func (c *Calculator) Add(n int) int</a></li>
+          <li><a href="#Calculator.Value">func (c *Calculator) Value() int</a></li>
+          </ul>
+      </li>
+  <li>
+      <a href="#Separator">type Separator</a>
+      <ul>
+          <li><a href="#Separator.Split">func (sep Separator) Split(s string) []string</a></li>
+          </ul>
+      </li>
+  <li>
+      <a href="#Splitter">type Splitter</a>
+      <ul>
+          <li><a href="#Splitter.Split">func (s *Splitter) Split(str string) []string</a></li>
+          </ul>
+      </li>
+  </ul>
+<h4 id="pkg-examples">Examples</h4>
+<ul>
+  <li><a href="#example-Calculator">Calculator</a></li>
+  <li><a href="#example-Divide">Divide</a></li>
+  <li><a href="#example-Reverse">Reverse</a></li>
+  <li><a href="#example-Splitter">Splitter</a></li>
+  </ul><h3 id="pkg-variables">Variables</h3>
+  
+  
+  
+  <pre class="chroma"><span class="kd">var</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span><span class="w">	</span><span class="c1">// ErrDivideByZero 是除数为零时返回的错误。</span><span class="w">
+</span><span class="w">	</span><span id="ErrDivideByZero"><span class="nx">ErrDivideByZero</span></span><span class="w"> </span><span class="p">=</span><span class="w"> </span><a href="https://pkg.go.dev/errors"><span class="nx">errors</span></a><span class="p">.</span><a href="https://pkg.go.dev/errors#New"><span class="nf">New</span></a><span class="p">(</span><span class="s">&#34;division by zero&#34;</span><span class="p">)</span><span class="w">
+</span><span class="p">)</span></pre>
+  <h3 id="pkg-functions">Functions</h3>
+  
+  <h4 id="Add">func Add</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">Add</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>Add 返回两个整数的和。
+不会发生溢出检查，直接返回 a+b 的结果。
+<details class="deprecated"><summary><h4 id="Concat">func Concat <span class="deprecated-tag">deprecated</span></h4></summary>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">Concat</span><span class="p">(</span><span class="nx">strs</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>Deprecated: Concat 使用原生的 + 连接字符串，
+在大量连接时性能不佳，请使用 strings.Builder 代替。
+</details><h4 id="Divide">func Divide</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">Divide</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><span class="p">(</span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">,</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <p>Divide 安全地计算 a/b 的商。
+如果 b 为 0，则返回 0 和 ErrDivideByZero 错误。
+<details id="example-Divide" class="example">
+      <summary>Example</summary>
+      <pre class="chroma"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span><span class="w">
+</span><span class="w">	</span><span class="nx">docgentest</span><span class="w"> </span><span class="s">&#34;github.com/example/docgen-test&#34;</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="nx">result</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">docgentest</span><span class="p">.</span><span class="nf">Divide</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w">
+</span><span class="w">	</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">result</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span></pre>
+      <div>
+          <p>Output:</p>
+          <pre>3 &lt;nil&gt;
+</pre>
+        </div></details>
+  <h4 id="Multiply">func Multiply</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">Multiply</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>Multiply 返回两个整数的乘积。
+<h4 id="Reverse">func Reverse</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">Reverse</span><span class="p">(</span><span class="nx">s</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>Reverse 返回将 s 按 Unicode 码点反转后的字符串。
+<p>示例：
+<pre>Reverse(&quot;hello&quot;) // &quot;olleh&quot;
+Reverse(&quot;世界&quot;)  // &quot;界世&quot;
+</pre>
+<details id="example-Reverse" class="example">
+      <summary>Example</summary>
+      <pre class="chroma"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span><span class="w">
+</span><span class="w">	</span><span class="nx">docgentest</span><span class="w"> </span><span class="s">&#34;github.com/example/docgen-test&#34;</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">docgentest</span><span class="p">.</span><span class="nf">Reverse</span><span class="p">(</span><span class="s">&#34;hello&#34;</span><span class="p">))</span><span class="w">
+</span><span class="p">}</span></pre>
+      <div>
+          <p>Output:</p>
+          <pre>olleh
+</pre>
+        </div></details>
+  <h4 id="Subtract">func Subtract</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">Subtract</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>Subtract 返回两个整数的差（a - b）。
+<h4 id="WordCount">func WordCount</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">WordCount</span><span class="p">(</span><span class="nx">s</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>WordCount 统计 s 中的单词数量。
+单词是由空白字符分隔的非空序列。
+多个连续空白字符视为单个分隔。
+<h3 id="pkg-types">Types</h3>
+  
+  <h4 id="Calculator">type Calculator</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">Calculator</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
+</span><span class="p">}</span></pre>
+    <p>Calculator 是一个简单的计算器类型，可以保持一个累加值。
+零值可以直接使用，累加值初始为 0。
+<details id="example-Calculator" class="example">
+      <summary>Example</summary>
+      <pre class="chroma"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span><span class="w">
+</span><span class="w">	</span><span class="nx">docgentest</span><span class="w"> </span><span class="s">&#34;github.com/example/docgen-test&#34;</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="nx">calc</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">docgentest</span><span class="p">.</span><span class="nf">NewCalculator</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">
+</span><span class="w">	</span><span class="nx">calc</span><span class="p">.</span><span class="nf">Add</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="w">
+</span><span class="w">	</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">calc</span><span class="p">.</span><span class="nf">Value</span><span class="p">())</span><span class="w">
+</span><span class="p">}</span></pre>
+      <div>
+          <p>Output:</p>
+          <pre>15
+</pre>
+        </div></details>
+  <h5 id="NewCalculator">func NewCalculator</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">NewCalculator</span><span class="p">(</span><span class="nx">initial</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#Calculator"><span class="nx">Calculator</span></a></pre>
+  <p>NewCalculator 创建一个新的计算器，并可以传入一个初始值。
+<h5 id="Calculator.Add">func (*Calculator) Add</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">c</span><span class="w"> </span><span class="o">*</span><a href="#Calculator"><span class="nx">Calculator</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Add</span><span class="p">(</span><span class="nx">n</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>Add 将 n 加到计算器的当前值上，并返回新的值。
+<h5 id="Calculator.Value">func (*Calculator) Value</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">c</span><span class="w"> </span><span class="o">*</span><a href="#Calculator"><span class="nx">Calculator</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Value</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>Value 返回计算器当前的累加值。
+<h4 id="Separator">type Separator</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">Separator</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+    <p>Separator 定义了分割字符串时使用的分隔符类型。
+它本质上是 string 的别名，但可以附加方法。
+<h5 id="Separator.Split">func (Separator) Split</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">sep</span><span class="w"> </span><a href="#Separator"><span class="nx">Separator</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Split</span><span class="p">(</span><span class="nx">s</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><span class="p">[]</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>Split 使用分隔符 sep 对 s 进行分割，返回分割后的子串切片。
+如果 s 为空字符串，则返回空切片。
+该方法永远不会返回 nil。
+<h4 id="Splitter">type Splitter</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">Splitter</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="c1">// Sep 是用于分割的分隔符。</span><span class="w">
+</span><span class="w">	</span><span id="Splitter.Sep"><span class="nx">Sep</span></span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="w">
+</span><span class="w">	</span><span class="c1">// N 是最大分割次数。</span><span class="w">
+</span><span class="w">	</span><span class="c1">// 如果 N &lt; 0，则进行全部分割（等同于 N 为 0）。</span><span class="w">
+</span><span class="w">	</span><span class="c1">// 如果 N == 0，使用 strings.Split 的行为。</span><span class="w">
+</span><span class="w">	</span><span class="c1">// 如果 N &gt; 0，最多返回 N 个子串。</span><span class="w">
+</span><span class="w">	</span><span id="Splitter.N"><span class="nx">N</span></span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="w">
+</span><span class="p">}</span></pre>
+    <p>Splitter 是一个可定制的字符串分割器。
+它的零值是一个以空白字符作为分隔符、最多进行 0 次分割（即全部分割）的分割器。
+<details id="example-Splitter" class="example">
+      <summary>Example</summary>
+      <pre class="chroma"><span class="kn">package</span><span class="w"> </span><span class="nx">main</span><span class="w">
+</span><span class="w">
+</span><span class="kn">import</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span><span class="w">	</span><span class="s">&#34;fmt&#34;</span><span class="w">
+</span><span class="w">
+</span><span class="w">	</span><span class="nx">docgentest</span><span class="w"> </span><span class="s">&#34;github.com/example/docgen-test&#34;</span><span class="w">
+</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="kd">func</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="nx">s</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">docgentest</span><span class="p">.</span><span class="nx">Splitter</span><span class="p">{</span><span class="nx">Sep</span><span class="p">:</span><span class="w"> </span><span class="s">&#34;,&#34;</span><span class="p">,</span><span class="w"> </span><span class="nx">N</span><span class="p">:</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="p">}</span><span class="w">
+</span><span class="w">	</span><span class="nx">result</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">s</span><span class="p">.</span><span class="nf">Split</span><span class="p">(</span><span class="s">&#34;a,b,c&#34;</span><span class="p">)</span><span class="w">
+</span><span class="w">	</span><span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nx">result</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span></pre>
+      <div>
+          <p>Output:</p>
+          <pre>[a b c]
+</pre>
+        </div></details>
+  <h5 id="Splitter.Split">func (*Splitter) Split</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">s</span><span class="w"> </span><span class="o">*</span><a href="#Splitter"><span class="nx">Splitter</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Split</span><span class="p">(</span><span class="nx">str</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><span class="p">[]</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>Split 使用接收者的配置对 s 进行分割。
+</main>
+    <hr>
+    <footer>
+      <small id="generated-by-footer">
+        Generated with <a href="https://abhinav.github.io/doc2go/">doc2go</a>
+      </small>
+    </footer>
+    <script src="../../../../../_/js/permalink.js"></script></body>
+</html>
