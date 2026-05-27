@@ -31,7 +31,7 @@ type Calculator struct {
 	value int
 }
 
-// NewCalculator 创建一个新的计算器，并可以传入一个初始值。
+// NewCalculator 创建一个新的计算器，并可以传入一个初始值。1
 func NewCalculator(initial int) *Calculator {
 	return &Calculator{value: initial}
 }
