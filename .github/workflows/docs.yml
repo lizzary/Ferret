@@ -1,0 +1,24 @@
+# .github/workflows/docs.yml
+name: Generate & Deploy Docs
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Frontend Docs (TypeDoc)
+        run: |
+          cd packages/frontend
+          npm ci
+          npx typedoc --out ../../docs/frontend src/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs

@@ -1,0 +1,40 @@
+# .github/workflows/ci.yml
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:           # PR 时必须通过才能合并
+    branches: [main]
+
+jobs:
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: cd packages/frontend && npm ci
+      - run: cd packages/frontend && npm run lint    # ESLint
+      - run: cd packages/frontend && npm test        # Jest / Vitest
+
+  test-master-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: cd packages/master-node && go test ./...
+      - run: cd packages/master-node && go vet ./...
+
+  test-compute-node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - run: cd packages/compute-node && go test ./...
