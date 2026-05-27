@@ -17,15 +17,14 @@ jobs:
         uses: actions/checkout@v4
 
       # ───────── 1. 前端文档 (TypeDoc → HTML) ─────────
-      # 暂时跳过，需要时再补全
       - name: Skip frontend docs
         run: echo "Frontend docs not generated yet"
 
-      # ───────── 2. 主节点文档 (Go → pkgsite) ─────────
+      # ───────── 2. 主节点文档 (Go / pkgsite → 静态镜像) ─────────
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'   # 根据你的 go.mod 调整版本
+          go-version: '1.22'   # 根据你的 go.mod 调整
 
       - name: Install pkgsite
         run: go install golang.org/x/pkgsite/cmd/pkgsite@latest
@@ -34,7 +33,26 @@ jobs:
         run: |
           mkdir -p docs/master-node
           cd packages/master-node
-          pkgsite -out ../../docs/master-node .
+
+          # 启动 pkgsite
+          pkgsite -http=:8080 &
+          PKGSITE_PID=$!
+
+          # 等待服务启动
+          for i in {1..30}; do
+            if curl -s -o /dev/null http://localhost:8080; then
+              break
+            fi
+            sleep 1
+          done
+
+          # 镜像站点，转换链接，不保留主机名目录
+          wget -r -l inf -p -k -np -nH --cut-dirs=0 \
+            -P ../../docs/master-node \
+            http://localhost:8080/
+
+          # 关闭 pkgsite
+          kill $PKGSITE_PID 2>/dev/null
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
       - name: Skip compute-node docs
@@ -61,7 +79,7 @@ jobs:
           <body>
             <h1>📖 Search Engine Documentation</h1>
             <ul>
-              <!-- 暂时注释掉未生成的文档链接，等补全后再打开 -->
+              <!-- 其他文档暂未生成，用时取消注释即可 -->
               <!-- <li><a href="frontend/index.html">Frontend (React / TypeDoc)</a></li> -->
               <li><a href="master-node/index.html">Master Node (Go / pkgsite)</a></li>
               <!-- <li><a href="compute-node/index.html">Compute Node (Rust / cargo doc)</a></li> -->
