@@ -2,142 +2,24 @@ name: Generate & Deploy Docs
 
 on:
   push:
-    branches: [master]
-
-permissions:
-  contents: write   # 允许 git push 到 master
+    branches: [ main ]        # 按需修改
+  workflow_dispatch:          # 允许手动触发
 
 jobs:
   docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          # 必须抓取完整的 git 历史，否则 git push 可能冲突
-          fetch-depth: 0
 
-      # ───────── 1. 前端文档 (TypeDoc → HTML) ─────────
-      # 这里占位，后续添加
-
-      # ───────── 2. 主节点文档 (Go + pkgsite 静态生成) ─────────
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.26'  # 根据项目调整
 
-      - name: Generate Master Node Docs
-        run: |
-          cd packages/master-node
-          MODULE="github.com/${{ github.repository }}/packages/master-node"
-          echo "Using module path: ${MODULE}"
-          sed -i "s|^module .*|module ${MODULE}|" go.mod
-      
-          go install golang.org/x/pkgsite/cmd/pkgsite@latest
-      
-          # 启动 pkgsite HTTP 服务
-          pkgsite -http=:8080 . &
-          PKGSITE_PID=$!
-      
-          # 等待服务就绪
-          for i in {1..30}; do
-            if curl -s -o /dev/null http://localhost:8080; then
-              break
-            fi
-            sleep 1
-          done
-      
-          # 计算模块路径的深度（用于 wget 的 --cut-dirs）
-          DEPTH=$(echo "${MODULE}" | tr '/' '\n' | wc -l)
-      
-          mkdir -p ../../docs/master-node
-      
-          # 用 wget 镜像整个模块页面，但排除已知会返回 424 的路径
-          wget --mirror \
-               --convert-links \
-               --adjust-extension \
-               --page-requisites \
-               --no-parent \
-               --no-host-directories \
-               --cut-dirs=${DEPTH} \
-               --directory-prefix=../../docs/master-node \
-               --reject-regex '(tab=importedby|tab=versions|/images/menu-24px\.svg)' \
-               http://localhost:8080/${MODULE} || {
-                 echo "wget finished with warnings, continuing..."
-               }
-      
-          # 停止 pkgsite
-          kill $PKGSITE_PID 2>/dev/null || true
-      
-          # ---------- 后处理：清理带 ? 参数的文件名 ----------
-          cd ../../docs/master-node
-
-          # 遇错继续
-          set +e
-          # 1. 重命名所有包含 ? 的文件，去掉查询参数
-          find . -type f -name '*\?*' | while read f; do
-            newname=$(echo "$f" | sed 's/\?.*//')
-            mv "$f" "$newname"
-          done
-
-          find . -name '*.html' -exec sed -i -E 's/(href|src)="([^"]*)\?[^"]*\.(css|js|html)"/\1="\2.\3"/g' {} +
-
-          # 恢复遇错即停
-          set -e
-          echo "Post-processing done, files cleaned."
-
-      # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
-      # 这里占位，后续添加
-
-      # ───────── 4. 创建导航首页 ─────────
-      - name: Create index.html for navigation
-        run: |
-          # 找到 master-node 的主文档文件名（例如 master-node@v0.0.0.html）
-          MAIN_FILE=$(ls docs/master-node/*@*.html 2>/dev/null | grep -v '?' | head -1 | xargs basename)
-          if [ -z "$MAIN_FILE" ]; then
-            # 如果没找到带版本的文件，回退到尝试 index.html（如果你后来改成了重命名）
-            MAIN_FILE="index.html"
-          fi
-          echo "Detected main doc file: master-node/${MAIN_FILE}"
-
-          cat > docs/index.html << EOF
-          <!DOCTYPE html>
-          <html lang="zh">
-          <head>
-            <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>Search Engine Docs</title>
-            <style>
-              body { font-family: sans-serif; max-width: 600px; margin: 60px auto; }
-              h1   { border-bottom: 2px solid #eee; padding-bottom: 8px; }
-              li   { margin: 12px 0; font-size: 1.1rem; }
-              a    { color: #0969da; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <h1>📖 Search Engine Documentation</h1>
-            <ul>
-              <li><a href="master-node/${MAIN_FILE}">Master Node (Go / pkgsite)</a></li>
-            </ul>
-          </body>
-          </html>
-          EOF
-
-      # ───────── 5. 提交并推送到 master ─────────
-      - name: Commit & Push docs to master
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 添加 docs 目录
-          git add docs/
-          
-          # 若没有变化则跳过
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          
-          git commit -m "🤖 Generate docs [skip ci]"
-          git push origin master
+      - name: Run doc2go
+        uses: nickgronow/doc2go-action@v1
+        with:
+          path: ./docs             # 要生成文档的包路径
