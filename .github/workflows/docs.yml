@@ -5,7 +5,7 @@ on:
     branches: [master]
 
 permissions:
-  contents: write   # 允许推送回 master 分支
+  contents: write   # 允许写入 gh-pages 分支
 
 jobs:
   docs:
@@ -13,34 +13,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # 拉取完整历史，避免推送冲突
 
       # ───────── 1. 前端文档 (TypeDoc → HTML) ─────────
-      # 后续添加
+      # 占位
 
-      # ───────── 2. 主节点文档 (Go + doc2go) ─────────
+      # ───────── 2. 主节点文档 (doc2go) ─────────
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.26'
 
-      - name: Generate Master Node Docs (doc2go)
+      - name: Generate Master Node Docs
         run: |
           cd packages/master-node
-
           MODULE="github.com/${{ github.repository }}/packages/master-node"
           echo "Using module path: ${MODULE}"
           sed -i "s|^module .*|module ${MODULE}|" go.mod
-
-          # 安装 doc2go
           go install go.abhg.dev/doc2go@latest
-
-          # 生成文档，输出到仓库根目录下的 docs/master-node
           doc2go -out ../../docs/master-node .
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
-      # 后续添加
+      # 占位
 
       # ───────── 4. 创建导航首页 ─────────
       - name: Create index.html for navigation
@@ -48,7 +41,7 @@ jobs:
           cat > docs/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="zh">
-          <head><meta charset="UTF-8"/><title>Search Engine Docs</title>...</head>
+          <head><meta charset="UTF-8"/><title>Search Engine Docs</title></head>
           <body>
             <h1>📖 Search Engine Documentation</h1>
             <ul>
@@ -58,15 +51,10 @@ jobs:
           </html>
           EOF
 
-      # ───────── 5. 提交并推送到 master ─────────
-      - name: Commit & Push docs to master
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-          git commit -m "🤖 Generate docs with doc2go [skip ci]"
-          git push origin master
+      # ───────── 5. 部署到 gh-pages 分支 ─────────
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          keep_files: false
