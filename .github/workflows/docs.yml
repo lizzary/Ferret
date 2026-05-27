@@ -31,13 +31,58 @@ jobs:
           cd packages/master-node
           MODULE="github.com/${{ github.repository }}/packages/master-node"
           echo "Using module path: ${MODULE}"
-          # 如果 go.mod 中 module 路径已经正确，可跳过 sed
           sed -i "s|^module .*|module ${MODULE}|" go.mod
-
+      
           go install golang.org/x/pkgsite/cmd/pkgsite@latest
+      
+          # 启动 pkgsite HTTP 服务
+          pkgsite -http=:8080 . &
+          PKGSITE_PID=$!
+      
+          # 等待服务就绪
+          for i in {1..30}; do
+            if curl -s -o /dev/null http://localhost:8080; then
+              break
+            fi
+            sleep 1
+          done
+      
+          # 计算模块路径的深度（用于 wget 的 --cut-dirs）
+          DEPTH=$(echo "${MODULE}" | tr '/' '\n' | wc -l)
+      
           mkdir -p ../../docs/master-node
-          pkgsite -help | grep -q static && echo "static mode supported" || echo "static mode NOT supported"
-          pkgsite -static -out=../../docs/master-node .
+      
+          # 用 wget 镜像整个模块页面，但排除已知会返回 424 的路径
+          wget --mirror \
+               --convert-links \
+               --adjust-extension \
+               --page-requisites \
+               --no-parent \
+               --no-host-directories \
+               --cut-dirs=${DEPTH} \
+               --directory-prefix=../../docs/master-node \
+               --reject-regex '(tab=importedby|tab=versions|/images/menu-24px\.svg)' \
+               http://localhost:8080/${MODULE} || {
+                 echo "wget finished with warnings, continuing..."
+               }
+      
+          # 停止 pkgsite
+          kill $PKGSITE_PID 2>/dev/null || true
+      
+          # ---------- 后处理：清理带 ? 参数的文件名 ----------
+          cd ../../docs/master-node
+      
+          # 1. 重命名所有包含 ? 的文件，去掉查询参数
+          find . -type f -name '*\?*' | while read f; do
+            # 例如: imports.min.css?version=.css -> imports.min.css
+            newname=$(echo "$f" | sed -E 's/\?.*\.([a-z0-9]+)$/\.\1/')
+            mv -n "$f" "$newname" 2>/dev/null
+          done
+      
+          # 2. 修改所有 HTML 中的资源引用，去掉 ?version= 等查询字符串
+          find . -name '*.html' -exec sed -i -E 's/(href|src)="([^"]*)\?[^"]*\.(css|js|html)"/\1="\2.\3"/g' {} +
+      
+          echo "Post-processing done, files cleaned."
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
       # 这里占位，后续添加
