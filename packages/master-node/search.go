@@ -5,7 +5,7 @@
 // implements the query parsing, fan-out, and result merging logic.
 package search
 
-// SearchRequest represents a search query issued by the user.123456123123
+// SearchRequest represents a search query issued by the user.12345612312349854
 type SearchRequest struct {
 	// Query is the raw search string, which may contain boolean operators
 	// and exact phrase markers.
