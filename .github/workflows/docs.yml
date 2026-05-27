@@ -29,14 +29,12 @@ jobs:
         run: |
           cd packages/master-node
 
-          # 如果你的 go.mod 的 module 声明不是 github.com/... 的路径，需要修正
-          # 否则 doc2go 生成的文档内链接可能不正确，这里根据仓库名动态修正
           MODULE="github.com/${{ github.repository }}/packages/master-node"
           echo "Using module path: ${MODULE}"
           sed -i "s|^module .*|module ${MODULE}|" go.mod
 
           # 安装 doc2go
-          go install github.com/abhinav/doc2go@latest
+          go install go.abhg.dev/doc2go@latest
 
           # 生成文档，输出到仓库根目录下的 docs/master-node
           doc2go -out ../../docs/master-node .
