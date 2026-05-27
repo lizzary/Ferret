@@ -71,17 +71,21 @@ jobs:
       
           # ---------- 后处理：清理带 ? 参数的文件名 ----------
           cd ../../docs/master-node
+
+          # 遇错继续
           set +e
           # 1. 重命名所有包含 ? 的文件，去掉查询参数
           find . -type f -name '*\?*' | while read f; do
             # 例如: imports.min.css?version=.css -> imports.min.css
             newname=$(echo "$f" | sed -E 's/\?.*\.([a-z0-9]+)$/\.\1/')
-            mv -n "$f" "$newname" 2>/dev/null
+            mv -n "$f" "$newname"
           done
       
           # 2. 修改所有 HTML 中的资源引用，去掉 ?version= 等查询字符串
           find . -name '*.html' -exec sed -i -E 's/(href|src)="([^"]*)\?[^"]*\.(css|js|html)"/\1="\2.\3"/g' {} +
-      
+          
+          # 恢复遇错即停
+          set -e
           echo "Post-processing done, files cleaned."
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
