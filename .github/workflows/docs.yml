@@ -5,11 +5,26 @@ on:
   push:
     branches: [main]
 
+# 确保部署到 GitHub Pages 的权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4   # 官方最新 v4，不要用 v6
+
+      # ───────── 1. 前端文档 (TypeDoc) ─────────
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: packages/frontend/package-lock.json
 
       - name: Generate Frontend Docs (TypeDoc)
         run: |
@@ -17,6 +32,51 @@ jobs:
           npm ci
           npx typedoc --out ../../docs/frontend src/
 
+      # ───────── 2. 主节点文档 (Go) ─────────
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Generate Master Node Docs (golds)
+        run: |
+          cd packages/master-node
+          # 安装 golds (Go 文档生成器，输出静态 HTML)
+          go install go101.org/golds@latest
+          # 生成文档到 docs/master-node 目录
+          golds -dir=../../docs/master-node ./...
+
+      # ───────── 3. 计算节点文档 (Rust) ─────────
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable   # 或 actions-rs/toolchain@v1
+
+      - name: Generate Compute Node Docs (cargo doc)
+        run: |
+          cd packages/compute-node
+          cargo doc --no-deps
+          # 将 cargo 生成的 HTML 复制到发布目录
+          mkdir -p ../../docs/compute-node
+          cp -r target/doc/* ../../docs/compute-node/
+
+      # ───────── 4. 创建导航首页 ─────────
+      - name: Create index.html for navigation
+        run: |
+          cat > docs/index.html <<EOF
+          <!DOCTYPE html>
+          <html>
+          <head><title>Search Engine Docs</title></head>
+          <body>
+          <h1>Project Documentation</h1>
+          <ul>
+            <li><a href="/frontend/">Frontend (React)</a></li>
+            <li><a href="/master-node/">Master Node (Go)</a></li>
+            <li><a href="/compute-node/">Compute Node (Rust)</a></li>
+          </ul>
+          </body>
+          </html>
+          EOF
+
+      # ───────── 5. 部署到 GitHub Pages ─────────
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
