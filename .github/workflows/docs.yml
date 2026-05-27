@@ -39,7 +39,9 @@ jobs:
           # 等待服务就绪
 
           for i in {1..30}; do
-            curl -sf http://localhost:8080/${MODULE} > /dev/null && break
+            if curl -s -o /dev/null http://localhost:8080; then
+              break
+            fi
             sleep 1
           done
 
