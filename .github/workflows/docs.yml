@@ -29,7 +29,7 @@ jobs:
         run: |
           cd packages/master-node
 
-          # 1. 修正模块名为真实的仓库路径（不污染 go.mod，仅本次运行有效）
+          # 1. 修正模块名为合法仓库路径
           MODULE="github.com/${{ github.repository }}/packages/master-node"
           echo "Using module path: ${MODULE}"
           sed -i "s|^module .*|module ${MODULE}|" go.mod
@@ -37,8 +37,8 @@ jobs:
           # 2. 安装 pkgsite
           go install golang.org/x/pkgsite/cmd/pkgsite@latest
 
-          # 3. 启动 pkgsite 并等待就绪
-          pkgsite -http=:8080 -dir . &
+          # 3. 启动 pkgsite，用 . 明确指定当前目录
+          pkgsite -http=:8080 . &
           PKGSITE_PID=$!
           for i in {1..30}; do
             if curl -s -o /dev/null http://localhost:8080; then
@@ -47,7 +47,7 @@ jobs:
             sleep 1
           done
 
-          # 4. 计算模块路径的目录层数，用于 wget 裁剪
+          # 4. 根据模块路径计算抓取时的目录深度
           DEPTH=$(echo "${MODULE}" | tr '/' '\n' | wc -l)
 
           # 5. 抓取静态文档
