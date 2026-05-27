@@ -1,12 +1,20 @@
 <!-- .github/PULL_REQUEST_TEMPLATE.md -->
-## 变更说明
-简要描述本次 PR 做了什么
+## Description
+<!-- Provide a brief summary of the changes introduced by this PR. -->
+...
 
-## 关联 Issue
-Closes #
+## Type of Change
+- [ ] New feature
+- [ ] Bug fix
+- [ ] Refactoring / Performance improvement
+- [ ] Documentation update
+- [ ] CI/CD pipeline change
+- [x] Other (please describe):
 
-## 自测清单
-- [ ] 本地测试通过
-- [ ] 新增了对应的单元测试
-- [ ] 更新了相关文档注释
-- [ ] 没有引入新的 lint 警告
+## New Features
+<!-- List any new features or enhancements added in this PR. If none, write "None". -->
+- 
+
+## Bug Fixes
+<!-- List any bugs fixed in this PR. Include a reference to the issue if applicable. If none, write "None". -->
+- 
