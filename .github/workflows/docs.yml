@@ -2,7 +2,7 @@ name: Generate & Deploy Docs
 
 on:
   push:
-    branches: [ main ]        # 按需修改
+    branches: [ master ]        # 按需修改
   workflow_dispatch:          # 允许手动触发
 
 jobs:
