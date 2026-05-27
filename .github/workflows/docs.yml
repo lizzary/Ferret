@@ -5,7 +5,7 @@ on:
     branches: [master]
 
 permissions:
-  contents: write   # peaceiris/actions-gh-pages 需要写权限
+  contents: write
   pages: write
   id-token: write
 
@@ -17,78 +17,28 @@ jobs:
         uses: actions/checkout@v4
 
       # ───────── 1. 前端文档 (TypeDoc → HTML) ─────────
-#      - name: Setup Node.js
-#        uses: actions/setup-node@v4
-#        with:
-#          node-version: '20'
-#          cache: 'npm'
-#          cache-dependency-path: packages/frontend/package-lock.json
-#
-#      - name: Generate Frontend Docs
-#        run: |
-#          cd packages/frontend
-#          npm ci
-#          # 若项目根没有 typedoc.json，用下面的内联配置
-#          # entryPointStrategy expand 会递归扫描 src/ 下所有 .ts/.tsx
-#          npx typedoc \
-#            --entryPointStrategy expand \
-#            --out ../../docs/frontend \
-#            --name "Frontend" \
-#            src
+      # 暂时跳过，需要时再补全
+      - name: Skip frontend docs
+        run: echo "Frontend docs not generated yet"
 
-      # ───────── 2. 主节点文档 (Go + pkgsite 静态抓取) ─────────
-      - name: Setup Go
+      # ───────── 2. 主节点文档 (Go → pkgsite) ─────────
+      - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'   # 注意: 1.26 尚不存在，保持与 go.mod 一致
+          go-version: '1.26'   # 根据你的 go.mod 调整版本
 
-      - name: Generate Master Node Docs
+      - name: Install pkgsite
+        run: go install golang.org/x/pkgsite/cmd/pkgsite@latest
+
+      - name: Generate master-node docs
         run: |
+          mkdir -p docs/master-node
           cd packages/master-node
-          go install golang.org/x/pkgsite/cmd/pkgsite@latest
-
-          # 从 go.mod 读取模块路径，例如 github.com/you/search-engine/packages/master-node
-          MODULE=$(go list -m)
-
-          # 后台启动 pkgsite 本地服务器
-          pkgsite -http=:8080 &
-          PKGSITE_PID=$!
-          # 等待服务就绪
-          for i in $(seq 1 10); do
-            curl -sf http://localhost:8080/${MODULE} > /dev/null && break
-            sleep 2
-          done
-
-          mkdir -p ../../docs/master-node
-          # 递归抓取为可离线浏览的静态 HTML
-          wget --mirror \
-               --convert-links \
-               --adjust-extension \
-               --page-requisites \
-               --no-parent \
-               --no-host-directories \
-               --directory-prefix=../../docs/master-node \
-               http://localhost:8080/${MODULE}
-
-          kill $PKGSITE_PID 2>/dev/null || true
+          pkgsite -out ../../docs/master-node .
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
-#      - name: Setup Rust
-#        uses: dtolnay/rust-toolchain@stable
-#        with:
-#          toolchain: stable
-#
-#      - name: Generate Compute Node Docs
-#        run: |
-#          cd packages/compute-node
-#          # --no-deps  只生成本包文档，不包含依赖
-#          # --document-private-items  包含私有项（可按需去掉）
-#          cargo doc --no-deps --document-private-items
-#
-#          mkdir -p ../../docs/compute-node
-#          # cargo doc 输出目录固定为 target/doc/<crate_name>
-#          # 用 /* 把所有 crate 文档（含 search-index.js 等）一并复制
-#          cp -r target/doc/* ../../docs/compute-node/
+      - name: Skip compute-node docs
+        run: echo "Compute node docs not generated yet"
 
       # ───────── 4. 创建导航首页 ─────────
       - name: Create index.html for navigation
@@ -111,9 +61,10 @@ jobs:
           <body>
             <h1>📖 Search Engine Documentation</h1>
             <ul>
-              <li><a href="frontend/index.html">Frontend (React / TypeDoc)</a></li>
+              <!-- 暂时注释掉未生成的文档链接，等补全后再打开 -->
+              <!-- <li><a href="frontend/index.html">Frontend (React / TypeDoc)</a></li> -->
               <li><a href="master-node/index.html">Master Node (Go / pkgsite)</a></li>
-              <li><a href="compute-node/index.html">Compute Node (Rust / cargo doc)</a></li>
+              <!-- <li><a href="compute-node/index.html">Compute Node (Rust / cargo doc)</a></li> -->
             </ul>
           </body>
           </html>
@@ -125,5 +76,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs
-          # 保留上一次部署的文件（三个目录独立更新时有用）
           keep_files: false
