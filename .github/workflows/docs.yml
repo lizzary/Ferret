@@ -19,18 +19,18 @@ jobs:
         uses: actions/checkout@v4   # 官方最新 v4，不要用 v6
 
       # ───────── 1. 前端文档 (TypeDoc) ─────────
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-          cache-dependency-path: packages/frontend/package-lock.json
-
-      - name: Generate Frontend Docs (TypeDoc)
-        run: |
-          cd packages/frontend
-          npm ci
-          npx typedoc --out ../../docs/frontend src/
+#      - name: Setup Node
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: 20
+#          cache: 'npm'
+#          cache-dependency-path: packages/frontend/package-lock.json
+#
+#      - name: Generate Frontend Docs (TypeDoc)
+#        run: |
+#          cd packages/frontend
+#          npm ci
+#          npx typedoc --out ../../docs/frontend src/
 
       # ───────── 2. 主节点文档 (Go) ─────────
       - name: Setup Go
@@ -47,16 +47,16 @@ jobs:
           golds -dir=../../docs/master-node ./...
 
       # ───────── 3. 计算节点文档 (Rust) ─────────
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable   # 或 actions-rs/toolchain@v1
-
-      - name: Generate Compute Node Docs (cargo doc)
-        run: |
-          cd packages/compute-node
-          cargo doc --no-deps
-          # 将 cargo 生成的 HTML 复制到发布目录
-          mkdir -p ../../docs/compute-node
-          cp -r target/doc/* ../../docs/compute-node/
+#      - name: Setup Rust
+#        uses: dtolnay/rust-toolchain@stable   # 或 actions-rs/toolchain@v1
+#
+#      - name: Generate Compute Node Docs (cargo doc)
+#        run: |
+#          cd packages/compute-node
+#          cargo doc --no-deps
+#          # 将 cargo 生成的 HTML 复制到发布目录
+#          mkdir -p ../../docs/compute-node
+#          cp -r target/doc/* ../../docs/compute-node/
 
       # ───────── 4. 创建导航首页 ─────────
       - name: Create index.html for navigation
