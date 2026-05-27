@@ -71,7 +71,7 @@ jobs:
       
           # ---------- 后处理：清理带 ? 参数的文件名 ----------
           cd ../../docs/master-node
-      
+          set +e
           # 1. 重命名所有包含 ? 的文件，去掉查询参数
           find . -type f -name '*\?*' | while read f; do
             # 例如: imports.min.css?version=.css -> imports.min.css
