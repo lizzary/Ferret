@@ -54,15 +54,16 @@ jobs:
           mkdir -p ../../docs/master-node
 
           wget --mirror \
-             --convert-links \
-             --adjust-extension \
-             --page-requisites \
-             --no-parent \
-             --no-host-directories \
-             --cut-dirs=${DEPTH} \
-             --directory-prefix=../../docs/master-node \
-             --reject '*tab=importedby*' \
-             http://localhost:8080/${MODULE}
+               --convert-links \
+               --adjust-extension \
+               --page-requisites \
+               --no-parent \
+               --no-host-directories \
+               --cut-dirs=${DEPTH} \
+               --directory-prefix=../../docs/master-node \
+               --reject-regex '(tab=importedby|tab=versions|/images/menu-24px\.svg)' \
+               http://localhost:8080/${MODULE}
+               
           kill $PKGSITE_PID 2>/dev/null || true
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
