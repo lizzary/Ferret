@@ -28,16 +28,18 @@ jobs:
       - name: Generate Master Node Docs
         run: |
           cd packages/master-node
+
+          # 1. 修正模块名为真实的仓库路径（不污染 go.mod，仅本次运行有效）
+          MODULE="github.com/${{ github.repository }}/packages/master-node"
+          echo "Using module path: ${MODULE}"
+          sed -i "s|^module .*|module ${MODULE}|" go.mod
+
+          # 2. 安装 pkgsite
           go install golang.org/x/pkgsite/cmd/pkgsite@latest
 
-          # 从 go.mod 读取模块路径，例如 github.com/you/search-engine/packages/master-node
-          MODULE=$(go list -m)
-
-          # 后台启动 pkgsite 本地服务器
-          pkgsite -http=:8080 &
+          # 3. 启动 pkgsite 并等待就绪
+          pkgsite -http=:8080 -dir . &
           PKGSITE_PID=$!
-          # 等待服务就绪
-
           for i in {1..30}; do
             if curl -s -o /dev/null http://localhost:8080; then
               break
@@ -45,14 +47,18 @@ jobs:
             sleep 1
           done
 
+          # 4. 计算模块路径的目录层数，用于 wget 裁剪
+          DEPTH=$(echo "${MODULE}" | tr '/' '\n' | wc -l)
+
+          # 5. 抓取静态文档
           mkdir -p ../../docs/master-node
-          # 递归抓取为可离线浏览的静态 HTML
           wget --mirror \
                --convert-links \
                --adjust-extension \
                --page-requisites \
                --no-parent \
                --no-host-directories \
+               --cut-dirs=${DEPTH} \
                --directory-prefix=../../docs/master-node \
                http://localhost:8080/${MODULE}
 
