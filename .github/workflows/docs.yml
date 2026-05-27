@@ -36,6 +36,7 @@ jobs:
 
           go install golang.org/x/pkgsite/cmd/pkgsite@latest
           mkdir -p ../../docs/master-node
+          pkgsite -help | grep -q static && echo "static mode supported" || echo "static mode NOT supported"
           pkgsite -static -out=../../docs/master-node .
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
