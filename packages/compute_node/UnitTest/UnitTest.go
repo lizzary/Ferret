@@ -291,6 +291,7 @@ func TestEnginePublishBlocking(t *T) {
 	t.Equal(int64(n), count.Load(), "all blocking publishes dispatched")
 }
 
+// TestEngineMultipleListeners  测试listener
 func TestEngineMultipleListeners(t *T) {
 	eng := EventEngine.New(2)
 	defer eng.Stop()
