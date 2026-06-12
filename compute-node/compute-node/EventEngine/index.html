@@ -4,21 +4,21 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="doc2go">
-    <link href="../../../../../../_/css/main.css" rel="stylesheet" />
-    <link rel="apple-touch-icon" sizes="180x180" href="../../../../../../_/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="../../../../../../_/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="../../../../../../_/icons/favicon-16x16.png">
-    <link rel="shortcut icon" href="../../../../../../_/icons/favicon.ico"><title>EventEngine</title>
+    <link href="../../_/css/main.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../_/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../_/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../_/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="../../_/icons/favicon.ico"><title>EventEngine</title>
 </head>
   <body>
     <nav>
-        <a href="../../../../..">github.com</a>/<a href="../../../..">lizzary</a>/<a href="../../..">Ferret</a>/<a href="../..">packages</a>/<a href="..">compute-node</a>/EventEngine<span class="navbar-right">
-          <a href="../../../../../..">Root</a> | <a href="#pkg-index">Index</a></span>
+        <a href="..">compute-node</a>/EventEngine<span class="navbar-right">
+          <a href="../..">Root</a> | <a href="#pkg-index">Index</a></span>
       </nav>
     <main>
 <h2 id="pkg-overview">package EventEngine</h2>
 
-<pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;github.com/lizzary/Ferret/packages/compute-node/EventEngine&#34;</span></pre>
+<pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;compute-node/EventEngine&#34;</span></pre>
 <p>Package EventEngine 提供高性能并发事件引擎。
 <h3 id="hdr-____">架构概览</h3>
 <p>EventEngine 是一个基于发布/订阅模式的事件分发系统，专为高并发场景设计。
@@ -106,7 +106,7 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
 <p>引擎在创建时即启动主循环 goroutine，调用方应在不再需要引擎时调用 Stop 进行清理。
 <h5 id="Engine.AddImmediateListener">func (*Engine) AddImmediateListener</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">AddImmediateListener</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">,</span><span class="w"> </span><span class="nx">handler</span><span class="w"> </span><a href="#HandlerFunc"><span class="nx">HandlerFunc</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">AddImmediateListener</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">,</span><span class="w"> </span><span class="nx">handler</span><span class="w"> </span><a href="#HandlerFunc"><span class="nx">HandlerFunc</span></a><span class="p">)</span></pre>
   <p>AddImmediateListener 向引擎注册一个事件监听器。
 <p>该方法线程安全，可在引擎运行时动态调用。
 注册的监听器将在匹配事件被 dispatch 时同步调用
@@ -115,7 +115,7 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
 如需执行耗时操作，建议在 handler 内部启动新的 goroutine。
 <h5 id="Engine.Publish">func (*Engine) Publish</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Publish</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Publish</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
   <p>Publish 以非阻塞方式向事件队列发布一个事件。
 <p>如果队列有空间，事件立即入队并返回；
 如果队列已满，事件被静默丢弃，同时打印警告日志。
@@ -124,14 +124,14 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
 如需获取入队失败的明确反馈，请使用 PublishTry。
 <h5 id="Engine.PublishBlocking">func (*Engine) PublishBlocking</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishBlocking</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishBlocking</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
   <p>PublishBlocking 以阻塞方式向事件队列发布一个事件。
 <p>调用方 goroutine 会阻塞直到事件成功入队，或引擎通过 Stop 关闭。
 适合发布者需要确保事件不丢失的场景。
 <p>注意：如果引擎已停止，此方法静默返回（事件被丢弃）。
 <h5 id="Engine.PublishTry">func (*Engine) PublishTry</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishTry</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishTry</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
   <p>PublishTry 尝试向事件队列发布一个事件，不阻塞。
 <p>如果事件成功入队，返回 nil；
 如果队列已满无法立即入队，返回 ErrQueueFull。
@@ -158,7 +158,7 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
   <p>Workers 返回引擎配置的 worker 数量。
 <h4 id="HandlerFunc">type HandlerFunc</h4>
     
-    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">HandlerFunc</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">HandlerFunc</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
     <p>HandlerFunc 是事件监听器的回调函数签名。
 <p>每个注册到引擎的监听器必须符合此签名。
 监听器在独立的 goroutine 中执行，如果发生 panic 会被引擎自动恢复，
@@ -170,5 +170,5 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
         Generated with <a href="https://abhinav.github.io/doc2go/">doc2go</a>
       </small>
     </footer>
-    <script src="../../../../../../_/js/permalink.js"></script></body>
+    <script src="../../_/js/permalink.js"></script></body>
 </html>
