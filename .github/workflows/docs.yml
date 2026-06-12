@@ -30,7 +30,7 @@ jobs:
           echo "Using module path: ${MODULE}"
           sed -i "s|^module .*|module ${MODULE}|" go.mod
           go install go.abhg.dev/doc2go@latest
-          doc2go -out ../../docs/master-node .
+          doc2go -out ../../docs/master-node ./...
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
       - name: Generate Compute Node Docs
@@ -39,7 +39,7 @@ jobs:
           MODULE="github.com/${{ github.repository }}/packages/compute-node"
           echo "Using module path: ${MODULE}"
           sed -i "s|^module .*|module ${MODULE}|" go.mod
-          doc2go -out ../../docs/compute-node .
+          doc2go -out ../../docs/compute-node ./...
 
       # ───────── 4. 创建导航首页 ─────────
       - name: Create index.html for navigation
@@ -52,6 +52,7 @@ jobs:
             <h1>📖 Search Engine Documentation</h1>
             <ul>
               <li><a href="master-node/index.html">Master Node (Go / doc2go)</a></li>
+              <li><a href="compute-node/index.html">Compute Node (Go / doc2go)</a></li>
             </ul>
           </body>
           </html>
