@@ -45,7 +45,7 @@ import (
 var (
 	// ErrQueueFull 表示事件队列已满，新事件被丢弃。
 	// 通过 PublishTry 调用时可获取此错误以确认事件是否成功入队。
-	ErrQueueFull = errors.New("Event queue is full")
+	ErrQueueFull = errors.New("event queue is full")
 
 	// ErrEngineStopped 表示引擎已停止，无法继续处理事件。
 	ErrEngineStopped = errors.New("engine is stopped")
