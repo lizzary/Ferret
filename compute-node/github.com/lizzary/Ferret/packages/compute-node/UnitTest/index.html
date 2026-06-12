@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="doc2go">
+    <link href="../../../../../../_/css/main.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../../../../../_/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../../../_/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../../../_/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="../../../../../../_/icons/favicon.ico"><title>UnitTest</title>
+</head>
+  <body>
+    <nav>
+        <a href="../../../../..">github.com</a>/<a href="../../../..">lizzary</a>/<a href="../../..">Ferret</a>/<a href="../..">packages</a>/<a href="..">compute-node</a>/UnitTest<span class="navbar-right">
+          <a href="../../../../../..">Root</a> | <a href="#pkg-index">Index</a></span>
+      </nav>
+    <main>
+<h2 id="pkg-overview">package UnitTest</h2>
+
+<pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;github.com/lizzary/Ferret/packages/compute-node/UnitTest&#34;</span></pre>
+<h3 id="pkg-index">Index</h3>
+<ul>
+  <li><a href="#RunAll">func RunAll()</a></li>
+  <li><a href="#TestEngineConcurrentPublish">func TestEngineConcurrentPublish(t *T)</a></li>
+  <li><a href="#TestEngineConcurrentPublishBlocking">func TestEngineConcurrentPublishBlocking(t *T)</a></li>
+  <li><a href="#TestEngineCreation">func TestEngineCreation(t *T)</a></li>
+  <li><a href="#TestEngineDynamicListener">func TestEngineDynamicListener(t *T)</a></li>
+  <li><a href="#TestEngineHandlerPanic">func TestEngineHandlerPanic(t *T)</a></li>
+  <li><a href="#TestEngineLargePayload">func TestEngineLargePayload(t *T)</a></li>
+  <li><a href="#TestEngineMultipleEventTypes">func TestEngineMultipleEventTypes(t *T)</a></li>
+  <li><a href="#TestEngineMultipleListeners">func TestEngineMultipleListeners(t *T)</a></li>
+  <li><a href="#TestEngineNoListener">func TestEngineNoListener(t *T)</a></li>
+  <li><a href="#TestEnginePerformance">func TestEnginePerformance(t *T)</a></li>
+  <li><a href="#TestEnginePublishAndDispatch">func TestEnginePublishAndDispatch(t *T)</a></li>
+  <li><a href="#TestEnginePublishBlocking">func TestEnginePublishBlocking(t *T)</a></li>
+  <li><a href="#TestEnginePublishTry">func TestEnginePublishTry(t *T)</a></li>
+  <li><a href="#TestEngineQueueLen">func TestEngineQueueLen(t *T)</a></li>
+  <li><a href="#TestEngineStopBehavior">func TestEngineStopBehavior(t *T)</a></li>
+  <li><a href="#TestEngineStopDrainsQueue">func TestEngineStopDrainsQueue(t *T)</a></li>
+  <li><a href="#TestEventBasic">func TestEventBasic(t *T)</a></li>
+  <li><a href="#TestEventEqualityWithData">func TestEventEqualityWithData(t *T)</a></li>
+  <li><a href="#TestEventEquals">func TestEventEquals(t *T)</a></li>
+  <li><a href="#TestEventNewVariants">func TestEventNewVariants(t *T)</a></li>
+  <li><a href="#TestEventStringFormat">func TestEventStringFormat(t *T)</a></li>
+  <li>
+      <a href="#T">type T</a>
+      <ul>
+          <li><a href="#NewT">func NewT(name string) *T</a></li>
+          <li><a href="#T.Equal">func (t *T) Equal(expected, actual any, msg ...any)</a></li>
+          <li><a href="#T.ErrorIs">func (t *T) ErrorIs(err, target error, msg ...any)</a></li>
+          <li><a href="#T.False">func (t *T) False(cond bool, msg ...any)</a></li>
+          <li><a href="#T.Nil">func (t *T) Nil(v any, msg ...any)</a></li>
+          <li><a href="#T.NoError">func (t *T) NoError(err error, msg ...any)</a></li>
+          <li><a href="#T.NotEqual">func (t *T) NotEqual(a, b any, msg ...any)</a></li>
+          <li><a href="#T.NotNil">func (t *T) NotNil(v any, msg ...any)</a></li>
+          <li><a href="#T.Summary">func (t *T) Summary() (passed, failed int)</a></li>
+          <li><a href="#T.True">func (t *T) True(cond bool, msg ...any)</a></li>
+          </ul>
+      </li>
+  </ul><h3 id="pkg-functions">Functions</h3>
+  
+  <h4 id="RunAll">func RunAll</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">RunAll</span><span class="p">()</span></pre>
+  <p>RunAll 运行所有测试并输出统计结果。
+<h4 id="TestEngineConcurrentPublish">func TestEngineConcurrentPublish</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineConcurrentPublish</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineConcurrentPublishBlocking">func TestEngineConcurrentPublishBlocking</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineConcurrentPublishBlocking</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineCreation">func TestEngineCreation</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineCreation</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineDynamicListener">func TestEngineDynamicListener</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineDynamicListener</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineHandlerPanic">func TestEngineHandlerPanic</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineHandlerPanic</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineLargePayload">func TestEngineLargePayload</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineLargePayload</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineMultipleEventTypes">func TestEngineMultipleEventTypes</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineMultipleEventTypes</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineMultipleListeners">func TestEngineMultipleListeners</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineMultipleListeners</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <p>TestEngineMultipleListeners  测试listener
+<h4 id="TestEngineNoListener">func TestEngineNoListener</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineNoListener</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEnginePerformance">func TestEnginePerformance</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePerformance</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEnginePublishAndDispatch">func TestEnginePublishAndDispatch</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePublishAndDispatch</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEnginePublishBlocking">func TestEnginePublishBlocking</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePublishBlocking</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEnginePublishTry">func TestEnginePublishTry</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePublishTry</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineQueueLen">func TestEngineQueueLen</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineQueueLen</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineStopBehavior">func TestEngineStopBehavior</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineStopBehavior</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEngineStopDrainsQueue">func TestEngineStopDrainsQueue</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineStopDrainsQueue</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEventBasic">func TestEventBasic</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventBasic</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEventEqualityWithData">func TestEventEqualityWithData</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventEqualityWithData</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEventEquals">func TestEventEquals</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventEquals</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEventNewVariants">func TestEventNewVariants</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventNewVariants</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h4 id="TestEventStringFormat">func TestEventStringFormat</h4>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventStringFormat</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <h3 id="pkg-types">Types</h3>
+  
+  <h4 id="T">type T</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">T</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
+</span><span class="p">}</span></pre>
+    <p>T 是轻量级测试上下文，提供断言方法并统计通过/失败。
+<h5 id="NewT">func NewT</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">NewT</span><span class="p">(</span><span class="nx">name</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a></pre>
+  <p>NewT 创建一个测试上下文。
+<h5 id="T.Equal">func (*T) Equal</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Equal</span><span class="p">(</span><span class="nx">expected</span><span class="p">,</span><span class="w"> </span><span class="nx">actual</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>Equal 断言 expected == actual。
+<h5 id="T.ErrorIs">func (*T) ErrorIs</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">ErrorIs</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span><span class="w"> </span><span class="nx">target</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>ErrorIs 断言 err 等于 target error。
+<h5 id="T.False">func (*T) False</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">False</span><span class="p">(</span><span class="nx">cond</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>False 断言条件为假。
+<h5 id="T.Nil">func (*T) Nil</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Nil</span><span class="p">(</span><span class="nx">v</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>Nil 断言 v == nil。
+<h5 id="T.NoError">func (*T) NoError</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">NoError</span><span class="p">(</span><span class="nx">err</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>NoError 断言 err == nil。
+<h5 id="T.NotEqual">func (*T) NotEqual</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">NotEqual</span><span class="p">(</span><span class="nx">a</span><span class="p">,</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>NotEqual 断言 expected != actual。
+<h5 id="T.NotNil">func (*T) NotNil</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">NotNil</span><span class="p">(</span><span class="nx">v</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>NotNil 断言 v != nil。
+<h5 id="T.Summary">func (*T) Summary</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Summary</span><span class="p">()</span><span class="w"> </span><span class="p">(</span><span class="nx">passed</span><span class="p">,</span><span class="w"> </span><span class="nx">failed</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span></pre>
+  <p>Summary 返回通过/失败计数。
+<h5 id="T.True">func (*T) True</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span><span class="w"> </span><span class="nf">True</span><span class="p">(</span><span class="nx">cond</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a><span class="p">,</span><span class="w"> </span><span class="nx">msg</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span></pre>
+  <p>True 断言条件为真。
+</main>
+    <hr>
+    <footer>
+      <small id="generated-by-footer">
+        Generated with <a href="https://abhinav.github.io/doc2go/">doc2go</a>
+      </small>
+    </footer>
+    <script src="../../../../../../_/js/permalink.js"></script></body>
+</html>

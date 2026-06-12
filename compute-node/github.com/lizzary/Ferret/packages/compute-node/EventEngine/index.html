@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="doc2go">
+    <link href="../../../../../../_/css/main.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../../../../../_/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../../../_/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../../../_/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="../../../../../../_/icons/favicon.ico"><title>EventEngine</title>
+</head>
+  <body>
+    <nav>
+        <a href="../../../../..">github.com</a>/<a href="../../../..">lizzary</a>/<a href="../../..">Ferret</a>/<a href="../..">packages</a>/<a href="..">compute-node</a>/EventEngine<span class="navbar-right">
+          <a href="../../../../../..">Root</a> | <a href="#pkg-index">Index</a></span>
+      </nav>
+    <main>
+<h2 id="pkg-overview">package EventEngine</h2>
+
+<pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;github.com/lizzary/Ferret/packages/compute-node/EventEngine&#34;</span></pre>
+<p>Package EventEngine 提供高性能并发事件引擎。
+<h3 id="hdr-____">架构概览</h3>
+<p>EventEngine 是一个基于发布/订阅模式的事件分发系统，专为高并发场景设计。
+其核心由以下组件构成：
+<ul>
+<li><p>事件队列（Event Queue）：带缓冲的 channel，发布者直接将事件投递到队列中，
+天然提供背压控制，避免在高负载下耗尽系统资源。
+<li><p>监听器注册表（Listener Registry）：以事件名称为键的 map[string][]HandlerFunc，
+使用 sync.RWMutex 保护，支持读多写少的并发访问模式。
+<li><p>Worker 池（Worker Pool）：通过带缓冲的 semaphore channel 控制最大并发度，
+确保同时执行的事件处理 goroutine 数量不超过预设的 workers 值。
+<li><p>引擎主循环（Main Loop）：独立 goroutine 持续从队列消费事件，
+获取 worker 令牌后分派给对应的监听器执行，支持通过 context 实现优雅关闭。
+</ul>
+<h3 id="hdr-____">使用示例</h3>
+<pre>// 创建引擎，4 个 worker，队列大小 8192
+eng := EventEngine.New(4, 8192)
+defer eng.Stop()
+
+// 注册监听器
+ev := Event.New(&quot;task.created&quot;)
+eng.AddImmediateListener(ev, func(e *Event.Event) {
+    fmt.Println(&quot;task created:&quot;, e.GetData())
+})
+
+// 发布事件
+eng.Publish(Event.New(&quot;task.created&quot;, taskID))
+</pre>
+<h3 id="pkg-index">Index</h3>
+<ul>
+  <li><a href="#pkg-variables">Variables</a></li><li>
+      <a href="#Engine">type Engine</a>
+      <ul>
+          <li><a href="#New">func New(workers int, queueSize ...int) *Engine</a></li>
+          <li><a href="#Engine.AddImmediateListener">func (eng *Engine) AddImmediateListener(e *Event.Event, handler HandlerFunc)</a></li>
+          <li><a href="#Engine.Publish">func (eng *Engine) Publish(e *Event.Event)</a></li>
+          <li><a href="#Engine.PublishBlocking">func (eng *Engine) PublishBlocking(e *Event.Event)</a></li>
+          <li><a href="#Engine.PublishTry">func (eng *Engine) PublishTry(e *Event.Event) error</a></li>
+          <li><a href="#Engine.QueueLen">func (eng *Engine) QueueLen() int</a></li>
+          <li><a href="#Engine.Stop">func (eng *Engine) Stop()</a></li>
+          <li><a href="#Engine.Workers">func (eng *Engine) Workers() int</a></li>
+          </ul>
+      </li>
+  <li>
+      <a href="#HandlerFunc">type HandlerFunc</a>
+      </li>
+  </ul><h3 id="pkg-variables">Variables</h3>
+  
+  
+  
+  <pre class="chroma"><span class="kd">var</span><span class="w"> </span><span class="p">(</span><span class="w">
+</span><span class="w">	</span><span class="c1">// ErrQueueFull 表示事件队列已满，新事件被丢弃。</span><span class="w">
+</span><span class="w">	</span><span class="c1">// 通过 PublishTry 调用时可获取此错误以确认事件是否成功入队。</span><span class="w">
+</span><span class="w">	</span><span id="ErrQueueFull"><span class="nx">ErrQueueFull</span></span><span class="w"> </span><span class="p">=</span><span class="w"> </span><a href="https://pkg.go.dev/errors"><span class="nx">errors</span></a><span class="p">.</span><a href="https://pkg.go.dev/errors#New"><span class="nf">New</span></a><span class="p">(</span><span class="s">&#34;Event queue is full&#34;</span><span class="p">)</span><span class="w">
+</span><span class="w">
+</span><span class="w">	</span><span class="c1">// ErrEngineStopped 表示引擎已停止，无法继续处理事件。</span><span class="w">
+</span><span class="w">	</span><span id="ErrEngineStopped"><span class="nx">ErrEngineStopped</span></span><span class="w"> </span><span class="p">=</span><span class="w"> </span><a href="https://pkg.go.dev/errors"><span class="nx">errors</span></a><span class="p">.</span><a href="https://pkg.go.dev/errors#New"><span class="nf">New</span></a><span class="p">(</span><span class="s">&#34;engine is stopped&#34;</span><span class="p">)</span><span class="w">
+</span><span class="p">)</span></pre>
+  <p>引擎可能返回的错误。
+<h3 id="pkg-types">Types</h3>
+  
+  <h4 id="Engine">type Engine</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">Engine</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
+</span><span class="p">}</span></pre>
+    <p>Engine 是高性能并发事件引擎的核心类型。
+<p>Engine 实现了发布/订阅模式，支持以下特性：
+<ul>
+<li>固定大小的 worker 池，限制最大并发度
+<li>有界事件队列，防止内存无限增长
+<li>线程安全的动态监听器注册
+<li>多种发布策略（非阻塞丢弃、阻塞等待、尝试发布）
+<li>优雅关闭，等待所有进行中的事件处理完成
+<li>监听器 panic 自动恢复，保障引擎稳定性
+</ul>
+<p>Engine 通过 New 函数创建并自动启动，通过 Stop 方法安全关闭。
+零值不可直接使用。
+<h5 id="New">func New</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">New</span><span class="p">(</span><span class="nx">workers</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">,</span><span class="w"> </span><span class="nx">queueSize</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a></pre>
+  <p>New 创建并启动一个事件引擎。
+<p>workers 指定最大并发 worker 数量，必须为正整数。若传入 ≤0，自动取 1。
+queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传入 ≤0，使用 defaultQueueSize（4096）。
+<p>引擎在创建时即启动主循环 goroutine，调用方应在不再需要引擎时调用 Stop 进行清理。
+<h5 id="Engine.AddImmediateListener">func (*Engine) AddImmediateListener</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">AddImmediateListener</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">,</span><span class="w"> </span><span class="nx">handler</span><span class="w"> </span><a href="#HandlerFunc"><span class="nx">HandlerFunc</span></a><span class="p">)</span></pre>
+  <p>AddImmediateListener 向引擎注册一个事件监听器。
+<p>该方法线程安全，可在引擎运行时动态调用。
+注册的监听器将在匹配事件被 dispatch 时同步调用
+（在 worker goroutine 中执行，而非发布者 goroutine）。
+<p>handler 应避免长时间阻塞，否则会占用 worker 资源。
+如需执行耗时操作，建议在 handler 内部启动新的 goroutine。
+<h5 id="Engine.Publish">func (*Engine) Publish</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Publish</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+  <p>Publish 以非阻塞方式向事件队列发布一个事件。
+<p>如果队列有空间，事件立即入队并返回；
+如果队列已满，事件被静默丢弃，同时打印警告日志。
+<p>该方法是性能最优的发布路径，适合可容忍事件丢失的场景。
+如需确保事件必须被处理，请使用 PublishBlocking。
+如需获取入队失败的明确反馈，请使用 PublishTry。
+<h5 id="Engine.PublishBlocking">func (*Engine) PublishBlocking</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishBlocking</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+  <p>PublishBlocking 以阻塞方式向事件队列发布一个事件。
+<p>调用方 goroutine 会阻塞直到事件成功入队，或引擎通过 Stop 关闭。
+适合发布者需要确保事件不丢失的场景。
+<p>注意：如果引擎已停止，此方法静默返回（事件被丢弃）。
+<h5 id="Engine.PublishTry">func (*Engine) PublishTry</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishTry</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
+  <p>PublishTry 尝试向事件队列发布一个事件，不阻塞。
+<p>如果事件成功入队，返回 nil；
+如果队列已满无法立即入队，返回 ErrQueueFull。
+<p>这是 Publish 的带错误反馈版本，适合调用方需要根据入队结果
+执行不同逻辑的场景（如重试、降级处理或上报监控）。
+<h5 id="Engine.QueueLen">func (*Engine) QueueLen</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">QueueLen</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>QueueLen 返回当前事件队列中待处理的事件数量。
+<p>可用于监控引擎负载。返回值仅是快照，调用后立即过时。
+<h5 id="Engine.Stop">func (*Engine) Stop</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Stop</span><span class="p">()</span></pre>
+  <p>Stop 优雅停止引擎。
+<p>它会：
+<ol>
+<li>取消内部 context，通知主循环和所有阻塞的 PublishBlocking 调用退出。
+<li>等待所有正在执行的监听器完成（通过 sync.WaitGroup 同步）。
+<li>调用 Stop 后不应再向引擎发布事件，否则行为未定义。
+</ol>
+<h5 id="Engine.Workers">func (*Engine) Workers</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Workers</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a></pre>
+  <p>Workers 返回引擎配置的 worker 数量。
+<h4 id="HandlerFunc">type HandlerFunc</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">HandlerFunc</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="https://pkg.go.dev/compute-node/Event"><span class="nx">Event</span></a><span class="p">.</span><a href="https://pkg.go.dev/compute-node/Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+    <p>HandlerFunc 是事件监听器的回调函数签名。
+<p>每个注册到引擎的监听器必须符合此签名。
+监听器在独立的 goroutine 中执行，如果发生 panic 会被引擎自动恢复，
+不会影响其他监听器或引擎的正常运行。
+</main>
+    <hr>
+    <footer>
+      <small id="generated-by-footer">
+        Generated with <a href="https://abhinav.github.io/doc2go/">doc2go</a>
+      </small>
+    </footer>
+    <script src="../../../../../../_/js/permalink.js"></script></body>
+</html>

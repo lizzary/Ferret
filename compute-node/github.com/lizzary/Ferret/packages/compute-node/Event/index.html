@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="doc2go">
+    <link href="../../../../../../_/css/main.css" rel="stylesheet" />
+    <link rel="apple-touch-icon" sizes="180x180" href="../../../../../../_/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="../../../../../../_/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../../../../../../_/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="../../../../../../_/icons/favicon.ico"><title>Event</title>
+</head>
+  <body>
+    <nav>
+        <a href="../../../../..">github.com</a>/<a href="../../../..">lizzary</a>/<a href="../../..">Ferret</a>/<a href="../..">packages</a>/<a href="..">compute-node</a>/Event<span class="navbar-right">
+          <a href="../../../../../..">Root</a> | <a href="#pkg-index">Index</a></span>
+      </nav>
+    <main>
+<h2 id="pkg-overview">package Event</h2>
+
+<pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;github.com/lizzary/Ferret/packages/compute-node/Event&#34;</span></pre>
+<p>Package Event 提供高性能事件引擎中使用的核心事件类型。
+<p>Event 是一个不可变的值对象，封装了事件名称和可选载荷数据。
+事件一旦通过 New 创建，其 name 和 data 便不可修改，只能通过
+GetName 和 GetData 方法读取。这种设计确保了在并发场景下
+多个 goroutine 可以安全地共享同一个 Event 实例，无需额外同步。
+<p>典型用法：
+<pre>ev := Event.New(&quot;user.created&quot;, user)
+engine.Publish(ev)
+</pre>
+<h3 id="pkg-index">Index</h3>
+<ul>
+  <li>
+      <a href="#Event">type Event</a>
+      <ul>
+          <li><a href="#New">func New(name string, data ...any) *Event</a></li>
+          <li><a href="#Event.Equals">func (e *Event) Equals(other *Event) bool</a></li>
+          <li><a href="#Event.GetData">func (e *Event) GetData() any</a></li>
+          <li><a href="#Event.GetName">func (e *Event) GetName() string</a></li>
+          <li><a href="#Event.String">func (e *Event) String() string</a></li>
+          </ul>
+      </li>
+  </ul><h3 id="pkg-types">Types</h3>
+  
+  <h4 id="Event">type Event</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">Event</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
+</span><span class="p">}</span></pre>
+    <p>Event 表示一个可发布到事件引擎的事件对象。
+<p>每个 Event 由两部分组成：
+<ul>
+<li>name：事件的唯一标识字符串，用于将事件路由到对应的监听器。
+<li>data：事件携带的可选载荷，可以是任意 Go 值。传 nil 表示无数据。
+</ul>
+<p>Event 的零值不可直接使用，请始终通过 New 函数创建实例。
+<h5 id="New">func New</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">New</span><span class="p">(</span><span class="nx">name</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a></pre>
+  <p>New 创建一个新的 Event 实例。
+<p>name 为必填参数，用于标识事件类型，在事件路由和 Equals 比较中使用。
+data 为可选参数，传入一个值作为事件载荷；不传或传 nil 表示该事件不携带数据。
+<p>示例：
+<pre>click := Event.New(&quot;ui.button.click&quot;)
+login := Event.New(&quot;user.login&quot;, userID)
+</pre>
+<h5 id="Event.Equals">func (*Event) Equals</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Equals</span><span class="p">(</span><span class="nx">other</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a></pre>
+  <p>Equals 判断当前事件与另一个事件是否相等。
+<p>相等性仅基于事件名称比较，不比较 data 字段。
+若 other 为 nil，始终返回 false。
+<p>这是 Go 惯用的相等性判断方法（Go 不支持运算符重载）。
+<h5 id="Event.GetData">func (*Event) GetData</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">GetData</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a></pre>
+  <p>GetData 返回事件携带的数据。
+<p>如果事件创建时未提供 data 参数或传入了 nil，则返回 nil。
+调用者应自行对返回值进行类型断言以获取原始类型。
+<h5 id="Event.GetName">func (*Event) GetName</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">GetName</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>GetName 返回事件的名称字符串。
+<p>名称由 New 创建时指定，在 Event 的整个生命周期内保持不变。
+<h5 id="Event.String">func (*Event) String</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">String</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>String 返回事件的字符串表示，格式为 Event{name=&quot;...&quot;, data=...}。
+<p>该方法实现了 fmt.Stringer 接口，便于调试和日志输出。
+</main>
+    <hr>
+    <footer>
+      <small id="generated-by-footer">
+        Generated with <a href="https://abhinav.github.io/doc2go/">doc2go</a>
+      </small>
+    </footer>
+    <script src="../../../../../../_/js/permalink.js"></script></body>
+</html>
