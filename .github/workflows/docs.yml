@@ -33,7 +33,19 @@ jobs:
           doc2go -out ../../docs/master-node .
 
       # ───────── 3. 计算节点文档 (Rust + cargo doc) ─────────
-      # 占位
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Generate Master Node Docs
+        run: |
+          cd packages/compute-node
+          MODULE="github.com/${{ github.repository }}/packages/compute-node"
+          echo "Using module path: ${MODULE}"
+          sed -i "s|^module .*|module ${MODULE}|" go.mod
+          go install go.abhg.dev/doc2go@latest
+          doc2go -out ../../docs/compute-node .
 
       # ───────── 4. 创建导航首页 ─────────
       - name: Create index.html for navigation
