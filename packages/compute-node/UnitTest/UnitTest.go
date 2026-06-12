@@ -1,8 +1,8 @@
 package UnitTest
 
 import (
-	"compute_node/Event"
-	"compute_node/EventEngine"
+	"compute-node/Event"
+	"compute-node/EventEngine"
 	"fmt"
 	"runtime"
 	"sync"

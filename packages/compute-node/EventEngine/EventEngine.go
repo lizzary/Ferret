@@ -34,7 +34,7 @@
 package EventEngine
 
 import (
-	"compute_node/Event"
+	"compute-node/Event"
 	"context"
 	"errors"
 	"fmt"

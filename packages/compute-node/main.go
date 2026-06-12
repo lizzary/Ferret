@@ -1,6 +1,6 @@
 package main
 
-import "compute_node/UnitTest"
+import "compute-node/UnitTest"
 
 func main() {
 	UnitTest.RunAll()
