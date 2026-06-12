@@ -36,9 +36,10 @@ jobs:
       - name: Generate Compute Node Docs
         run: |
           cd packages/compute-node
-          MODULE="github.com/${{ github.repository }}/packages/compute-node"
+          MODULE="compute-node"
           echo "Using module path: ${MODULE}"
           sed -i "s|^module .*|module ${MODULE}|" go.mod
+          find . -name "*.go" -exec sed -i "s|\"${OLD_MODULE}/|\"${MODULE}/|g" {} +
           doc2go -out ../../docs/compute-node ./...
 
       # ───────── 4. 创建导航首页 ─────────
