@@ -1,7 +1,6 @@
 package UnitTest
 
 import (
-	"compute-node/packages/Event"
 	"compute-node/packages/EventEngine"
 	"fmt"
 	"runtime"
@@ -99,7 +98,7 @@ func (t *T) False(cond bool, msg ...any) {
 // Nil 断言 v == nil。
 func (t *T) Nil(v any, msg ...any) {
 	isNil := v == nil
-	// 处理带类型信息的 nil（如 (*Event)(nil)）
+	// 处理带类型信息的 nil（如 (*EventEngine.Event)(nil)）
 	if !isNil {
 		// 反射检查太重量级，这里对常见类型做简单判断
 		detail := fmt.Sprintf("expected nil, got %v", v)
@@ -147,14 +146,14 @@ func (t *T) ErrorIs(err, target error, msg ...any) {
 func (t *T) Summary() (passed, failed int) { return t.passed, t.failed }
 
 // ============================================================================
-// Event 包测试
+// Event 类型测试（属于 EventEngine 包）
 // ============================================================================
 
 func TestEventBasic(t *T) {
-	e1 := Event.New("user.login", map[string]string{"user": "alice", "ip": "127.0.0.1"})
-	e2 := Event.New("user.login")
-	e3 := Event.New("user.logout", 42)
-	e5 := Event.New("empty.event")
+	e1 := EventEngine.NewEvent("user.login", map[string]string{"user": "alice", "ip": "127.0.0.1"})
+	e2 := EventEngine.NewEvent("user.login")
+	e3 := EventEngine.NewEvent("user.logout", 42)
+	e5 := EventEngine.NewEvent("empty.event")
 
 	t.Equal("user.login", e1.GetName(), "e1 name")
 	t.Equal("user.login", e2.GetName(), "e2 name")
@@ -173,56 +172,56 @@ func TestEventBasic(t *T) {
 
 func TestEventNewVariants(t *T) {
 	// int
-	t.Equal(42, Event.New("num", 42).GetData())
+	t.Equal(42, EventEngine.NewEvent("num", 42).GetData())
 
 	// string
-	t.Equal("hello world", Event.New("msg", "hello world").GetData())
+	t.Equal("hello world", EventEngine.NewEvent("msg", "hello world").GetData())
 
 	// float64
-	t.Equal(3.14159, Event.New("pi", 3.14159).GetData())
+	t.Equal(3.14159, EventEngine.NewEvent("pi", 3.14159).GetData())
 
 	// bool
-	t.Equal(true, Event.New("flag", true).GetData())
+	t.Equal(true, EventEngine.NewEvent("flag", true).GetData())
 
 	// slice
-	t.Equal([]int{1, 2, 3}, Event.New("list", []int{1, 2, 3}).GetData())
+	t.Equal([]int{1, 2, 3}, EventEngine.NewEvent("list", []int{1, 2, 3}).GetData())
 
 	// struct
 	type Payload struct {
 		ID   int
 		Name string
 	}
-	t.Equal(Payload{ID: 1, Name: "test"}, Event.New("struct", Payload{ID: 1, Name: "test"}).GetData())
+	t.Equal(Payload{ID: 1, Name: "test"}, EventEngine.NewEvent("struct", Payload{ID: 1, Name: "test"}).GetData())
 
 	// nil
-	t.Nil(Event.New("nil.event", nil).GetData())
+	t.Nil(EventEngine.NewEvent("nil.event", nil).GetData())
 
 	// 多 data 参数 — 只取第一个
-	t.Equal("first", Event.New("multi", "first", "second", "third").GetData())
+	t.Equal("first", EventEngine.NewEvent("multi", "first", "second", "third").GetData())
 }
 
 func TestEventEquals(t *T) {
-	a := Event.New("x", 1)
-	b := Event.New("x", 2)
+	a := EventEngine.NewEvent("x", 1)
+	b := EventEngine.NewEvent("x", 2)
 	t.True(a.Equals(b), "same name, different data → true")
 
-	c := Event.New("")
-	d := Event.New("")
+	c := EventEngine.NewEvent("")
+	d := EventEngine.NewEvent("")
 	t.True(c.Equals(d), "both empty name → true")
 
-	t.False(Event.New("").Equals(Event.New("non")), "empty vs non-empty → false")
+	t.False(EventEngine.NewEvent("").Equals(EventEngine.NewEvent("non")), "empty vs non-empty → false")
 
-	t.False(Event.New("User.Login").Equals(Event.New("user.login")), "case-sensitive → false")
+	t.False(EventEngine.NewEvent("User.Login").Equals(EventEngine.NewEvent("user.login")), "case-sensitive → false")
 }
 
 func TestEventStringFormat(t *T) {
-	e1 := Event.New("test.event", "payload")
+	e1 := EventEngine.NewEvent("test.event", "payload")
 	t.Equal(`Event{name="test.event", data=payload}`, e1.String())
 
-	e2 := Event.New("test.event")
+	e2 := EventEngine.NewEvent("test.event")
 	t.Equal(`Event{name="test.event", data=<nil>}`, e2.String())
 
-	e3 := Event.New("", nil)
+	e3 := EventEngine.NewEvent("", nil)
 	t.Equal(`Event{name="", data=<nil>}`, e3.String())
 }
 
@@ -231,65 +230,65 @@ func TestEventStringFormat(t *T) {
 // ============================================================================
 
 func TestEngineCreation(t *T) {
-	eng0 := EventEngine.New(0)
+	eng0 := EventEngine.NewEventEngine(0)
 	t.Equal(1, eng0.Workers(), "workers=0 → default 1")
 	eng0.Stop()
 
-	engNeg := EventEngine.New(-5)
+	engNeg := EventEngine.NewEventEngine(-5)
 	t.Equal(1, engNeg.Workers(), "workers=-5 → default 1")
 	engNeg.Stop()
 
-	eng4 := EventEngine.New(4)
+	eng4 := EventEngine.NewEventEngine(4)
 	t.Equal(4, eng4.Workers(), "workers=4")
 	eng4.Stop()
 }
 
 func TestEnginePublishAndDispatch(t *T) {
-	eng := EventEngine.New(4)
+	eng := EventEngine.NewEventEngine(4)
 	defer eng.Stop()
 
 	var count atomic.Int64
-	eng.AddImmediateListener(Event.New("user.login"), func(e *Event.Event) {
+	eng.AddImmediateListener(EventEngine.NewEvent("user.login"), func(e *EventEngine.Event) {
 		count.Add(1)
 	})
 
-	eng.Publish(Event.New("user.login", map[string]string{"user": "alice"}))
-	eng.Publish(Event.New("user.login", map[string]string{"user": "bob"}))
-	eng.Publish(Event.New("user.login", map[string]string{"user": "charlie"}))
+	eng.Publish(EventEngine.NewEvent("user.login", map[string]string{"user": "alice"}))
+	eng.Publish(EventEngine.NewEvent("user.login", map[string]string{"user": "bob"}))
+	eng.Publish(EventEngine.NewEvent("user.login", map[string]string{"user": "charlie"}))
 
 	time.Sleep(50 * time.Millisecond)
 	t.Equal(int64(3), count.Load(), "3 events dispatched")
 }
 
 func TestEnginePublishTry(t *T) {
-	eng := EventEngine.New(1, 4096)
+	eng := EventEngine.NewEventEngine(1, 4096)
 	defer eng.Stop()
 
-	err := eng.PublishTry(Event.New("test", "data"))
+	err := eng.PublishTry(EventEngine.NewEvent("test", "data"))
 	t.NoError(err, "PublishTry with room")
 
 	// 小队列：容量只有 1
-	eng2 := EventEngine.New(1, 1)
+	eng2 := EventEngine.NewEventEngine(1, 1)
 	defer eng2.Stop()
 
-	_ = eng2.PublishTry(Event.New("fill", 1))
-	err2 := eng2.PublishTry(Event.New("fill", 2))
+	_ = eng2.PublishTry(EventEngine.NewEvent("fill", 1))
+	err2 := eng2.PublishTry(EventEngine.NewEvent("fill", 2))
 	t.ErrorIs(err2, EventEngine.ErrQueueFull, "queue full → ErrQueueFull")
 }
 
 func TestEnginePublishBlocking(t *T) {
-	eng := EventEngine.New(2, 16)
+	eng := EventEngine.NewEventEngine(2, 16)
 	defer eng.Stop()
 
 	var count atomic.Int64
-	eng.AddImmediateListener(Event.New("block"), func(e *Event.Event) {
+	eng.AddImmediateListener(EventEngine.NewEvent("block"), func(e *EventEngine.Event) {
 		count.Add(1)
 		time.Sleep(1 * time.Millisecond)
 	})
 
 	const n = 50
 	for i := 0; i < n; i++ {
-		eng.PublishBlocking(Event.New("block", i))
+		eng.PublishBlocking(EventEngine.NewEvent("block", i))
 	}
 	time.Sleep(200 * time.Millisecond)
 	t.Equal(int64(n), count.Load(), "all blocking publishes dispatched")
@@ -297,15 +296,15 @@ func TestEnginePublishBlocking(t *T) {
 
 // TestEngineMultipleListeners  测试listener
 func TestEngineMultipleListeners(t *T) {
-	eng := EventEngine.New(2)
+	eng := EventEngine.NewEventEngine(2)
 	defer eng.Stop()
 
 	var c1, c2, c3 atomic.Int64
-	eng.AddImmediateListener(Event.New("multi"), func(e *Event.Event) { c1.Add(1) })
-	eng.AddImmediateListener(Event.New("multi"), func(e *Event.Event) { c2.Add(1) })
-	eng.AddImmediateListener(Event.New("multi"), func(e *Event.Event) { c3.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("multi"), func(e *EventEngine.Event) { c1.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("multi"), func(e *EventEngine.Event) { c2.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("multi"), func(e *EventEngine.Event) { c3.Add(1) })
 
-	eng.Publish(Event.New("multi", nil))
+	eng.Publish(EventEngine.NewEvent("multi", nil))
 	time.Sleep(30 * time.Millisecond)
 
 	t.Equal(int64(1), c1.Load(), "listener 1 triggered")
@@ -314,7 +313,7 @@ func TestEngineMultipleListeners(t *T) {
 }
 
 func TestEngineNoListener(t *T) {
-	eng := EventEngine.New(2)
+	eng := EventEngine.NewEventEngine(2)
 	defer eng.Stop()
 
 	// 无监听器事件不崩溃
@@ -324,29 +323,29 @@ func TestEngineNoListener(t *T) {
 				t.log(false, fmt.Sprintf("no-listener event panicked: %v", r))
 			}
 		}()
-		eng.Publish(Event.New("no.listener", "ignored"))
+		eng.Publish(EventEngine.NewEvent("no.listener", "ignored"))
 		time.Sleep(30 * time.Millisecond)
-		eng2 := EventEngine.New(1)
+		eng2 := EventEngine.NewEventEngine(1)
 		defer eng2.Stop()
-		eng2.Publish(Event.New("ghost", nil))
+		eng2.Publish(EventEngine.NewEvent("ghost", nil))
 		time.Sleep(30 * time.Millisecond)
 	}()
 	t.True(true, "no-listener event: no panic")
 }
 
 func TestEngineDynamicListener(t *T) {
-	eng := EventEngine.New(2)
+	eng := EventEngine.NewEventEngine(2)
 	defer eng.Stop()
 
 	var pre, post atomic.Int64
 
-	eng.AddImmediateListener(Event.New("dynamic"), func(e *Event.Event) { pre.Add(1) })
-	eng.Publish(Event.New("dynamic", "before"))
+	eng.AddImmediateListener(EventEngine.NewEvent("dynamic"), func(e *EventEngine.Event) { pre.Add(1) })
+	eng.Publish(EventEngine.NewEvent("dynamic", "before"))
 	time.Sleep(30 * time.Millisecond)
 
 	// 运行时添加
-	eng.AddImmediateListener(Event.New("dynamic"), func(e *Event.Event) { post.Add(1) })
-	eng.Publish(Event.New("dynamic", "after"))
+	eng.AddImmediateListener(EventEngine.NewEvent("dynamic"), func(e *EventEngine.Event) { post.Add(1) })
+	eng.Publish(EventEngine.NewEvent("dynamic", "after"))
 	time.Sleep(30 * time.Millisecond)
 
 	t.Equal(int64(2), pre.Load(), "pre listener received both events")
@@ -354,45 +353,45 @@ func TestEngineDynamicListener(t *T) {
 }
 
 func TestEngineHandlerPanic(t *T) {
-	eng := EventEngine.New(2)
+	eng := EventEngine.NewEventEngine(2)
 	defer eng.Stop()
 
 	var normalCount atomic.Int64
-	eng.AddImmediateListener(Event.New("panic.test"), func(e *Event.Event) {
+	eng.AddImmediateListener(EventEngine.NewEvent("panic.test"), func(e *EventEngine.Event) {
 		panic("intentional panic for testing!")
 	})
-	eng.AddImmediateListener(Event.New("panic.test"), func(e *Event.Event) {
+	eng.AddImmediateListener(EventEngine.NewEvent("panic.test"), func(e *EventEngine.Event) {
 		normalCount.Add(1)
 	})
 
-	eng.Publish(Event.New("panic.test", nil))
+	eng.Publish(EventEngine.NewEvent("panic.test", nil))
 	time.Sleep(50 * time.Millisecond)
 
 	t.Equal(int64(1), normalCount.Load(), "normal handler ran after panic recovery")
 }
 
 func TestEngineMultipleEventTypes(t *T) {
-	eng := EventEngine.New(4)
+	eng := EventEngine.NewEventEngine(4)
 	defer eng.Stop()
 
 	var loginCount, logoutCount, orderCount, paymentCount atomic.Int64
 
-	eng.AddImmediateListener(Event.New("user.login"), func(e *Event.Event) { loginCount.Add(1) })
-	eng.AddImmediateListener(Event.New("user.logout"), func(e *Event.Event) { logoutCount.Add(1) })
-	eng.AddImmediateListener(Event.New("order.created"), func(e *Event.Event) { orderCount.Add(1) })
-	eng.AddImmediateListener(Event.New("payment.done"), func(e *Event.Event) { paymentCount.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("user.login"), func(e *EventEngine.Event) { loginCount.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("user.logout"), func(e *EventEngine.Event) { logoutCount.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("order.created"), func(e *EventEngine.Event) { orderCount.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("payment.done"), func(e *EventEngine.Event) { paymentCount.Add(1) })
 
 	for i := 0; i < 10; i++ {
-		eng.Publish(Event.New("user.login", i))
+		eng.Publish(EventEngine.NewEvent("user.login", i))
 	}
 	for i := 0; i < 5; i++ {
-		eng.Publish(Event.New("user.logout", i))
+		eng.Publish(EventEngine.NewEvent("user.logout", i))
 	}
 	for i := 0; i < 8; i++ {
-		eng.Publish(Event.New("order.created", i))
+		eng.Publish(EventEngine.NewEvent("order.created", i))
 	}
 	for i := 0; i < 3; i++ {
-		eng.Publish(Event.New("payment.done", i))
+		eng.Publish(EventEngine.NewEvent("payment.done", i))
 	}
 
 	time.Sleep(200 * time.Millisecond)
@@ -404,11 +403,11 @@ func TestEngineMultipleEventTypes(t *T) {
 }
 
 func TestEngineConcurrentPublish(t *T) {
-	eng := EventEngine.New(8, 8192)
+	eng := EventEngine.NewEventEngine(8, 8192)
 	defer eng.Stop()
 
 	var count atomic.Int64
-	eng.AddImmediateListener(Event.New("concurrent"), func(e *Event.Event) { count.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("concurrent"), func(e *EventEngine.Event) { count.Add(1) })
 
 	const goroutines = 10
 	const perGoroutine = 500
@@ -419,7 +418,7 @@ func TestEngineConcurrentPublish(t *T) {
 		go func(id int) {
 			defer wg.Done()
 			for i := 0; i < perGoroutine; i++ {
-				eng.Publish(Event.New("concurrent", map[string]int{"g": id, "i": i}))
+				eng.Publish(EventEngine.NewEvent("concurrent", map[string]int{"g": id, "i": i}))
 			}
 		}(g)
 	}
@@ -432,11 +431,11 @@ func TestEngineConcurrentPublish(t *T) {
 }
 
 func TestEngineConcurrentPublishBlocking(t *T) {
-	eng := EventEngine.New(4, 2048)
+	eng := EventEngine.NewEventEngine(4, 2048)
 	defer eng.Stop()
 
 	var count atomic.Int64
-	eng.AddImmediateListener(Event.New("concurrent.block"), func(e *Event.Event) { count.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("concurrent.block"), func(e *EventEngine.Event) { count.Add(1) })
 
 	const goroutines = 5
 	const perGoroutine = 200
@@ -447,7 +446,7 @@ func TestEngineConcurrentPublishBlocking(t *T) {
 		go func(id int) {
 			defer wg.Done()
 			for i := 0; i < perGoroutine; i++ {
-				eng.PublishBlocking(Event.New("concurrent.block", i))
+				eng.PublishBlocking(EventEngine.NewEvent("concurrent.block", i))
 			}
 		}(g)
 	}
@@ -460,12 +459,12 @@ func TestEngineConcurrentPublishBlocking(t *T) {
 }
 
 func TestEngineStopBehavior(t *T) {
-	eng := EventEngine.New(2)
+	eng := EventEngine.NewEventEngine(2)
 	var count atomic.Int64
-	eng.AddImmediateListener(Event.New("stop.test"), func(e *Event.Event) { count.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("stop.test"), func(e *EventEngine.Event) { count.Add(1) })
 
-	eng.Publish(Event.New("stop.test", 1))
-	eng.Publish(Event.New("stop.test", 2))
+	eng.Publish(EventEngine.NewEvent("stop.test", 1))
+	eng.Publish(EventEngine.NewEvent("stop.test", 2))
 	time.Sleep(30 * time.Millisecond)
 
 	eng.Stop()
@@ -473,11 +472,11 @@ func TestEngineStopBehavior(t *T) {
 }
 
 func TestEngineStopDrainsQueue(t *T) {
-	eng := EventEngine.New(1, 256)
+	eng := EventEngine.NewEventEngine(1, 256)
 	var count atomic.Int64
-	eng.AddImmediateListener(Event.New("drain"), func(e *Event.Event) { count.Add(1) })
+	eng.AddImmediateListener(EventEngine.NewEvent("drain"), func(e *EventEngine.Event) { count.Add(1) })
 
-	eng.Publish(Event.New("drain", 1))
+	eng.Publish(EventEngine.NewEvent("drain", 1))
 	time.Sleep(20 * time.Millisecond)
 	eng.Stop()
 
@@ -490,19 +489,19 @@ func TestEngineStopDrainsQueue(t *T) {
 				t.log(false, fmt.Sprintf("publish after stop panicked: %v", r))
 			}
 		}()
-		eng.Publish(Event.New("drain", 2))
-		eng.Publish(Event.New("drain", 3))
+		eng.Publish(EventEngine.NewEvent("drain", 2))
+		eng.Publish(EventEngine.NewEvent("drain", 3))
 	}()
 	t.NotEqual(int64(0), beforeStop, "events handled before stop")
 	t.True(true, "publish after stop: no panic")
 }
 
 func TestEngineLargePayload(t *T) {
-	eng := EventEngine.New(2, 128)
+	eng := EventEngine.NewEventEngine(2, 128)
 	defer eng.Stop()
 
 	var receivedLen atomic.Int64
-	eng.AddImmediateListener(Event.New("large"), func(e *Event.Event) {
+	eng.AddImmediateListener(EventEngine.NewEvent("large"), func(e *EventEngine.Event) {
 		data, _ := e.GetData().([]byte)
 		receivedLen.Store(int64(len(data)))
 	})
@@ -511,21 +510,21 @@ func TestEngineLargePayload(t *T) {
 	for i := range largeData {
 		largeData[i] = byte(i % 256)
 	}
-	eng.Publish(Event.New("large", largeData))
+	eng.Publish(EventEngine.NewEvent("large", largeData))
 	time.Sleep(100 * time.Millisecond)
 
 	t.Equal(int64(len(largeData)), receivedLen.Load(), "1MB payload intact")
 }
 
 func TestEnginePerformance(t *T) {
-	eng := EventEngine.New(8, 65536)
+	eng := EventEngine.NewEventEngine(8, 65536)
 	defer eng.Stop()
 
 	const total = 50_000
 	var processed atomic.Int64
 	done := make(chan struct{})
 
-	eng.AddImmediateListener(Event.New("perf"), func(e *Event.Event) {
+	eng.AddImmediateListener(EventEngine.NewEvent("perf"), func(e *EventEngine.Event) {
 		if processed.Add(1) == total {
 			close(done)
 		}
@@ -533,7 +532,7 @@ func TestEnginePerformance(t *T) {
 
 	start := time.Now()
 	for i := 0; i < total; i++ {
-		eng.PublishBlocking(Event.New("perf", i))
+		eng.PublishBlocking(EventEngine.NewEvent("perf", i))
 	}
 	<-done
 	elapsed := time.Since(start)
@@ -543,13 +542,13 @@ func TestEnginePerformance(t *T) {
 }
 
 func TestEngineQueueLen(t *T) {
-	eng := EventEngine.New(1, 256)
+	eng := EventEngine.NewEventEngine(1, 256)
 	defer eng.Stop()
 
 	t.Equal(0, eng.QueueLen(), "initial QueueLen=0")
 
 	for i := 0; i < 50; i++ {
-		eng.Publish(Event.New("ql", i))
+		eng.Publish(EventEngine.NewEvent("ql", i))
 	}
 	// 有些可能已被派发，所以 >=0
 	qLen := eng.QueueLen()
@@ -564,9 +563,9 @@ func TestEventEqualityWithData(t *T) {
 		Nested map[string]int
 	}
 
-	e1 := Event.New("order.updated", complexData{ID: 1, Name: "a"})
-	e2 := Event.New("order.updated", complexData{ID: 2, Name: "b"})
-	e3 := Event.New("order.updated", nil)
+	e1 := EventEngine.NewEvent("order.updated", complexData{ID: 1, Name: "a"})
+	e2 := EventEngine.NewEvent("order.updated", complexData{ID: 2, Name: "b"})
+	e3 := EventEngine.NewEvent("order.updated", nil)
 
 	t.True(e1.Equals(e2), "diff data, same name → true")
 	t.True(e1.Equals(e3), "struct vs nil data, same name → true")

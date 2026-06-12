@@ -1,15 +1,15 @@
-// Package Event 提供高性能事件引擎中使用的核心事件类型。
+// Package EventEngine 提供高性能事件引擎中使用的核心事件类型。
 //
 // Event 是一个不可变的值对象，封装了事件名称和可选载荷数据。
-// 事件一旦通过 New 创建，其 name 和 data 便不可修改，只能通过
+// 事件一旦通过 NewEvent 创建，其 name 和 data 便不可修改，只能通过
 // GetName 和 GetData 方法读取。这种设计确保了在并发场景下
 // 多个 goroutine 可以安全地共享同一个 Event 实例，无需额外同步。
 //
 // 典型用法：
 //
-//	ev := Event.New("user.created", user)
+//	ev := EventEngine.NewEvent("user.created", user)
 //	engine.Publish(ev)
-package Event
+package EventEngine
 
 import "fmt"
 
@@ -19,22 +19,22 @@ import "fmt"
 //   - name：事件的唯一标识字符串，用于将事件路由到对应的监听器。
 //   - data：事件携带的可选载荷，可以是任意 Go 值。传 nil 表示无数据。
 //
-// Event 的零值不可直接使用，请始终通过 New 函数创建实例。
+// Event 的零值不可直接使用，请始终通过 NewEvent 函数创建实例。
 type Event struct {
 	name string
 	data any
 }
 
-// New 创建一个新的 Event 实例。
+// NewEvent 创建一个新的 Event 实例。
 //
 // name 为必填参数，用于标识事件类型，在事件路由和 Equals 比较中使用。
 // data 为可选参数，传入一个值作为事件载荷；不传或传 nil 表示该事件不携带数据。
 //
 // 示例：
 //
-//	click := Event.New("ui.button.click")
-//	login := Event.New("user.login", userID)
-func New(name string, data ...any) *Event {
+//	click := EventEngine.NewEvent("ui.button.click")
+//	login := EventEngine.NewEvent("user.login", userID)
+func NewEvent(name string, data ...any) *Event {
 	e := &Event{name: name}
 	if len(data) > 0 {
 		e.data = data[0]
@@ -44,7 +44,7 @@ func New(name string, data ...any) *Event {
 
 // GetName 返回事件的名称字符串。
 //
-// 名称由 New 创建时指定，在 Event 的整个生命周期内保持不变。
+// 名称由 NewEvent 创建时指定，在 Event 的整个生命周期内保持不变。
 func (e *Event) GetName() string {
 	return e.name
 }

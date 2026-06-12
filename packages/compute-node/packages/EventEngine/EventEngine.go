@@ -20,21 +20,20 @@
 // # 使用示例
 //
 //	// 创建引擎，4 个 worker，队列大小 8192
-//	eng := EventEngine.New(4, 8192)
+//	eng := EventEngine.NewEventEngine(4, 8192)
 //	defer eng.Stop()
 //
 //	// 注册监听器
-//	ev := Event.New("task.created")
-//	eng.AddImmediateListener(ev, func(e *Event.Event) {
+//	ev := EventEngine.NewEvent("task.created")
+//	eng.AddImmediateListener(ev, func(e *EventEngine.Event) {
 //	    fmt.Println("task created:", e.GetData())
 //	})
 //
 //	// 发布事件
-//	eng.Publish(Event.New("task.created", taskID))
+//	eng.Publish(EventEngine.NewEvent("task.created", taskID))
 package EventEngine
 
 import (
-	"compute-node/packages/Event"
 	"context"
 	"errors"
 	"fmt"
@@ -56,7 +55,7 @@ var (
 // 每个注册到引擎的监听器必须符合此签名。
 // 监听器在独立的 goroutine 中执行，如果发生 panic 会被引擎自动恢复，
 // 不会影响其他监听器或引擎的正常运行。
-type HandlerFunc func(e *Event.Event)
+type HandlerFunc func(e *Event)
 
 // EventEngine 是高性能并发事件引擎的核心类型。
 //
@@ -68,11 +67,11 @@ type HandlerFunc func(e *Event.Event)
 //   - 优雅关闭，等待所有进行中的事件处理完成
 //   - 监听器 panic 自动恢复，保障引擎稳定性
 //
-// EventEngine 通过 New 函数创建并自动启动，通过 Stop 方法安全关闭。
+// EventEngine 通过 NewEventEngine 函数创建并自动启动，通过 Stop 方法安全关闭。
 // 零值不可直接使用。
 type EventEngine struct {
 	workers   int
-	queue     chan *Event.Event
+	queue     chan *Event
 	semaphore chan struct{} // 令牌 channel，容量等于 workers，控制并发度
 	listeners map[string][]HandlerFunc
 	mu        sync.RWMutex
@@ -82,16 +81,16 @@ type EventEngine struct {
 	wg     sync.WaitGroup
 }
 
-// defaultQueueSize 是队列的默认容量，当 New 未指定 queueSize 时使用。
+// defaultQueueSize 是队列的默认容量，当 NewEvent 未指定 queueSize 时使用。
 const defaultQueueSize = 4096
 
-// New 创建并启动一个事件引擎。
+// NewEventEngine 创建并启动一个事件引擎。
 //
 // workers 指定最大并发 worker 数量，必须为正整数。若传入 ≤0，自动取 1。
 // queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传入 ≤0，使用 defaultQueueSize（4096）。
 //
 // 引擎在创建时即启动主循环 goroutine，调用方应在不再需要引擎时调用 Stop 进行清理。
-func New(workers int, queueSize ...int) *EventEngine {
+func NewEventEngine(workers int, queueSize ...int) *EventEngine {
 	if workers <= 0 {
 		workers = 1
 	}
@@ -103,7 +102,7 @@ func New(workers int, queueSize ...int) *EventEngine {
 	ctx, cancel := context.WithCancel(context.Background())
 	eng := &EventEngine{
 		workers:   workers,
-		queue:     make(chan *Event.Event, qs),
+		queue:     make(chan *Event, qs),
 		semaphore: make(chan struct{}, workers),
 		listeners: make(map[string][]HandlerFunc),
 		ctx:       ctx,
@@ -136,7 +135,7 @@ func (eng *EventEngine) run() {
 			select {
 			case e := <-eng.queue:
 				eng.wg.Add(1)
-				go func(ev *Event.Event, t struct{}) {
+				go func(ev *Event, t struct{}) {
 					defer eng.wg.Done()
 					defer func() { eng.semaphore <- t }() // 完成后归还令牌
 					eng.dispatch(ev)
@@ -155,7 +154,7 @@ func (eng *EventEngine) run() {
 // 然后逐一调用。使用快照而非直接遍历是为了：
 //   - 缩短持锁时间，减少锁竞争。
 //   - 避免在回调执行期间阻塞 AddImmediateListener。
-func (eng *EventEngine) dispatch(e *Event.Event) {
+func (eng *EventEngine) dispatch(e *Event) {
 	eng.mu.RLock()
 	hs := eng.listeners[e.GetName()]
 	handlers := make([]HandlerFunc, len(hs))
@@ -171,7 +170,7 @@ func (eng *EventEngine) dispatch(e *Event.Event) {
 //
 // 如果监听器发生 panic，safeCall 会捕获并打印警告信息，
 // 确保单个监听器的崩溃不会影响其他监听器的执行。
-func safeCall(h HandlerFunc, e *Event.Event) {
+func safeCall(h HandlerFunc, e *Event) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("[engine] handler panic for Event %q: %v\n", e.GetName(), r)
@@ -188,7 +187,7 @@ func safeCall(h HandlerFunc, e *Event.Event) {
 //
 // handler 应避免长时间阻塞，否则会占用 worker 资源。
 // 如需执行耗时操作，建议在 handler 内部启动新的 goroutine。
-func (eng *EventEngine) AddImmediateListener(e *Event.Event, handler HandlerFunc) {
+func (eng *EventEngine) AddImmediateListener(e *Event, handler HandlerFunc) {
 	eng.mu.Lock()
 	defer eng.mu.Unlock()
 	name := e.GetName()
@@ -203,7 +202,7 @@ func (eng *EventEngine) AddImmediateListener(e *Event.Event, handler HandlerFunc
 // 该方法是性能最优的发布路径，适合可容忍事件丢失的场景。
 // 如需确保事件必须被处理，请使用 PublishBlocking。
 // 如需获取入队失败的明确反馈，请使用 PublishTry。
-func (eng *EventEngine) Publish(e *Event.Event) {
+func (eng *EventEngine) Publish(e *Event) {
 	select {
 	case eng.queue <- e:
 	default:
@@ -217,7 +216,7 @@ func (eng *EventEngine) Publish(e *Event.Event) {
 // 适合发布者需要确保事件不丢失的场景。
 //
 // 注意：如果引擎已停止，此方法静默返回（事件被丢弃）。
-func (eng *EventEngine) PublishBlocking(e *Event.Event) {
+func (eng *EventEngine) PublishBlocking(e *Event) {
 	select {
 	case eng.queue <- e:
 	case <-eng.ctx.Done():
@@ -231,7 +230,7 @@ func (eng *EventEngine) PublishBlocking(e *Event.Event) {
 //
 // 这是 Publish 的带错误反馈版本，适合调用方需要根据入队结果
 // 执行不同逻辑的场景（如重试、降级处理或上报监控）。
-func (eng *EventEngine) PublishTry(e *Event.Event) error {
+func (eng *EventEngine) PublishTry(e *Event) error {
 	select {
 	case eng.queue <- e:
 		return nil
