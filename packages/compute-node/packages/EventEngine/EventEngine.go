@@ -34,7 +34,7 @@
 package EventEngine
 
 import (
-	"compute-node/Event"
+	"compute-node/packages/Event"
 	"context"
 	"errors"
 	"fmt"
@@ -58,9 +58,9 @@ var (
 // 不会影响其他监听器或引擎的正常运行。
 type HandlerFunc func(e *Event.Event)
 
-// Engine 是高性能并发事件引擎的核心类型。
+// EventEngine 是高性能并发事件引擎的核心类型。
 //
-// Engine 实现了发布/订阅模式，支持以下特性：
+// EventEngine 实现了发布/订阅模式，支持以下特性：
 //   - 固定大小的 worker 池，限制最大并发度
 //   - 有界事件队列，防止内存无限增长
 //   - 线程安全的动态监听器注册
@@ -68,9 +68,9 @@ type HandlerFunc func(e *Event.Event)
 //   - 优雅关闭，等待所有进行中的事件处理完成
 //   - 监听器 panic 自动恢复，保障引擎稳定性
 //
-// Engine 通过 New 函数创建并自动启动，通过 Stop 方法安全关闭。
+// EventEngine 通过 New 函数创建并自动启动，通过 Stop 方法安全关闭。
 // 零值不可直接使用。
-type Engine struct {
+type EventEngine struct {
 	workers   int
 	queue     chan *Event.Event
 	semaphore chan struct{} // 令牌 channel，容量等于 workers，控制并发度
@@ -91,7 +91,7 @@ const defaultQueueSize = 4096
 // queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传入 ≤0，使用 defaultQueueSize（4096）。
 //
 // 引擎在创建时即启动主循环 goroutine，调用方应在不再需要引擎时调用 Stop 进行清理。
-func New(workers int, queueSize ...int) *Engine {
+func New(workers int, queueSize ...int) *EventEngine {
 	if workers <= 0 {
 		workers = 1
 	}
@@ -101,7 +101,7 @@ func New(workers int, queueSize ...int) *Engine {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	eng := &Engine{
+	eng := &EventEngine{
 		workers:   workers,
 		queue:     make(chan *Event.Event, qs),
 		semaphore: make(chan struct{}, workers),
@@ -125,7 +125,7 @@ func New(workers int, queueSize ...int) *Engine {
 //  2. 令牌到手后，尝试从队列取出一个事件。
 //  3. 启动新的 goroutine 执行 dispatch，执行完毕后归还令牌。
 //  4. 收到 ctx.Done() 信号时退出循环，实现优雅关闭。
-func (eng *Engine) run() {
+func (eng *EventEngine) run() {
 	defer eng.wg.Done()
 	for {
 		select {
@@ -155,7 +155,7 @@ func (eng *Engine) run() {
 // 然后逐一调用。使用快照而非直接遍历是为了：
 //   - 缩短持锁时间，减少锁竞争。
 //   - 避免在回调执行期间阻塞 AddImmediateListener。
-func (eng *Engine) dispatch(e *Event.Event) {
+func (eng *EventEngine) dispatch(e *Event.Event) {
 	eng.mu.RLock()
 	hs := eng.listeners[e.GetName()]
 	handlers := make([]HandlerFunc, len(hs))
@@ -188,7 +188,7 @@ func safeCall(h HandlerFunc, e *Event.Event) {
 //
 // handler 应避免长时间阻塞，否则会占用 worker 资源。
 // 如需执行耗时操作，建议在 handler 内部启动新的 goroutine。
-func (eng *Engine) AddImmediateListener(e *Event.Event, handler HandlerFunc) {
+func (eng *EventEngine) AddImmediateListener(e *Event.Event, handler HandlerFunc) {
 	eng.mu.Lock()
 	defer eng.mu.Unlock()
 	name := e.GetName()
@@ -203,7 +203,7 @@ func (eng *Engine) AddImmediateListener(e *Event.Event, handler HandlerFunc) {
 // 该方法是性能最优的发布路径，适合可容忍事件丢失的场景。
 // 如需确保事件必须被处理，请使用 PublishBlocking。
 // 如需获取入队失败的明确反馈，请使用 PublishTry。
-func (eng *Engine) Publish(e *Event.Event) {
+func (eng *EventEngine) Publish(e *Event.Event) {
 	select {
 	case eng.queue <- e:
 	default:
@@ -217,7 +217,7 @@ func (eng *Engine) Publish(e *Event.Event) {
 // 适合发布者需要确保事件不丢失的场景。
 //
 // 注意：如果引擎已停止，此方法静默返回（事件被丢弃）。
-func (eng *Engine) PublishBlocking(e *Event.Event) {
+func (eng *EventEngine) PublishBlocking(e *Event.Event) {
 	select {
 	case eng.queue <- e:
 	case <-eng.ctx.Done():
@@ -231,7 +231,7 @@ func (eng *Engine) PublishBlocking(e *Event.Event) {
 //
 // 这是 Publish 的带错误反馈版本，适合调用方需要根据入队结果
 // 执行不同逻辑的场景（如重试、降级处理或上报监控）。
-func (eng *Engine) PublishTry(e *Event.Event) error {
+func (eng *EventEngine) PublishTry(e *Event.Event) error {
 	select {
 	case eng.queue <- e:
 		return nil
@@ -246,7 +246,7 @@ func (eng *Engine) PublishTry(e *Event.Event) error {
 //  1. 取消内部 context，通知主循环和所有阻塞的 PublishBlocking 调用退出。
 //  2. 等待所有正在执行的监听器完成（通过 sync.WaitGroup 同步）。
 //  3. 调用 Stop 后不应再向引擎发布事件，否则行为未定义。
-func (eng *Engine) Stop() {
+func (eng *EventEngine) Stop() {
 	eng.cancel()
 	eng.wg.Wait()
 }
@@ -254,7 +254,7 @@ func (eng *Engine) Stop() {
 // QueueLen 返回当前事件队列中待处理的事件数量。
 //
 // 可用于监控引擎负载。返回值仅是快照，调用后立即过时。
-func (eng *Engine) QueueLen() int { return len(eng.queue) }
+func (eng *EventEngine) QueueLen() int { return len(eng.queue) }
 
 // Workers 返回引擎配置的 worker 数量。
-func (eng *Engine) Workers() int { return eng.workers }
+func (eng *EventEngine) Workers() int { return eng.workers }
