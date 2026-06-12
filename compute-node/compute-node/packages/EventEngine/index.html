@@ -19,6 +19,15 @@
 <h2 id="pkg-overview">package EventEngine</h2>
 
 <pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;compute-node/packages/EventEngine&#34;</span></pre>
+<p>Package EventEngine 提供高性能事件引擎中使用的核心事件类型。
+<p>Event 是一个不可变的值对象，封装了事件名称和可选载荷数据。
+事件一旦通过 NewEvent 创建，其 name 和 data 便不可修改，只能通过
+GetName 和 GetData 方法读取。这种设计确保了在并发场景下
+多个 goroutine 可以安全地共享同一个 Event 实例，无需额外同步。
+<p>典型用法：
+<pre>ev := EventEngine.NewEvent(&quot;user.created&quot;, user)
+engine.Publish(ev)
+</pre>
 <p>Package EventEngine 提供高性能并发事件引擎。
 <h3 id="hdr-____">架构概览</h3>
 <p>EventEngine 是一个基于发布/订阅模式的事件分发系统，专为高并发场景设计。
@@ -35,28 +44,38 @@
 </ul>
 <h3 id="hdr-____">使用示例</h3>
 <pre>// 创建引擎，4 个 worker，队列大小 8192
-eng := EventEngine.New(4, 8192)
+eng := EventEngine.NewEventEngine(4, 8192)
 defer eng.Stop()
 
 // 注册监听器
-ev := Event.New(&quot;task.created&quot;)
-eng.AddImmediateListener(ev, func(e *Event.Event) {
+ev := EventEngine.NewEvent(&quot;task.created&quot;)
+eng.AddImmediateListener(ev, func(e *EventEngine.Event) {
     fmt.Println(&quot;task created:&quot;, e.GetData())
 })
 
 // 发布事件
-eng.Publish(Event.New(&quot;task.created&quot;, taskID))
+eng.Publish(EventEngine.NewEvent(&quot;task.created&quot;, taskID))
 </pre>
 <h3 id="pkg-index">Index</h3>
 <ul>
   <li><a href="#pkg-variables">Variables</a></li><li>
+      <a href="#Event">type Event</a>
+      <ul>
+          <li><a href="#NewEvent">func NewEvent(name string, data ...any) *Event</a></li>
+          <li><a href="#Event.Equals">func (e *Event) Equals(other *Event) bool</a></li>
+          <li><a href="#Event.GetData">func (e *Event) GetData() any</a></li>
+          <li><a href="#Event.GetName">func (e *Event) GetName() string</a></li>
+          <li><a href="#Event.String">func (e *Event) String() string</a></li>
+          </ul>
+      </li>
+  <li>
       <a href="#EventEngine">type EventEngine</a>
       <ul>
-          <li><a href="#New">func New(workers int, queueSize ...int) *EventEngine</a></li>
-          <li><a href="#EventEngine.AddImmediateListener">func (eng *EventEngine) AddImmediateListener(e *Event.Event, handler HandlerFunc)</a></li>
-          <li><a href="#EventEngine.Publish">func (eng *EventEngine) Publish(e *Event.Event)</a></li>
-          <li><a href="#EventEngine.PublishBlocking">func (eng *EventEngine) PublishBlocking(e *Event.Event)</a></li>
-          <li><a href="#EventEngine.PublishTry">func (eng *EventEngine) PublishTry(e *Event.Event) error</a></li>
+          <li><a href="#NewEventEngine">func NewEventEngine(workers int, queueSize ...int) *EventEngine</a></li>
+          <li><a href="#EventEngine.AddImmediateListener">func (eng *EventEngine) AddImmediateListener(e *Event, handler HandlerFunc)</a></li>
+          <li><a href="#EventEngine.Publish">func (eng *EventEngine) Publish(e *Event)</a></li>
+          <li><a href="#EventEngine.PublishBlocking">func (eng *EventEngine) PublishBlocking(e *Event)</a></li>
+          <li><a href="#EventEngine.PublishTry">func (eng *EventEngine) PublishTry(e *Event) error</a></li>
           <li><a href="#EventEngine.QueueLen">func (eng *EventEngine) QueueLen() int</a></li>
           <li><a href="#EventEngine.Stop">func (eng *EventEngine) Stop()</a></li>
           <li><a href="#EventEngine.Workers">func (eng *EventEngine) Workers() int</a></li>
@@ -80,7 +99,52 @@ eng.Publish(Event.New(&quot;task.created&quot;, taskID))
   <p>引擎可能返回的错误。
 <h3 id="pkg-types">Types</h3>
   
-  <h4 id="EventEngine">type EventEngine</h4>
+  <h4 id="Event">type Event</h4>
+    
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">Event</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
+</span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
+</span><span class="p">}</span></pre>
+    <p>Event 表示一个可发布到事件引擎的事件对象。
+<p>每个 Event 由两部分组成：
+<ul>
+<li>name：事件的唯一标识字符串，用于将事件路由到对应的监听器。
+<li>data：事件携带的可选载荷，可以是任意 Go 值。传 nil 表示无数据。
+</ul>
+<p>Event 的零值不可直接使用，请始终通过 NewEvent 函数创建实例。
+<h5 id="NewEvent">func NewEvent</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">NewEvent</span><span class="p">(</span><span class="nx">name</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span><span class="w"> </span><span class="nx">data</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a></pre>
+  <p>NewEvent 创建一个新的 Event 实例。
+<p>name 为必填参数，用于标识事件类型，在事件路由和 Equals 比较中使用。
+data 为可选参数，传入一个值作为事件载荷；不传或传 nil 表示该事件不携带数据。
+<p>示例：
+<pre>click := EventEngine.NewEvent(&quot;ui.button.click&quot;)
+login := EventEngine.NewEvent(&quot;user.login&quot;, userID)
+</pre>
+<h5 id="Event.Equals">func (*Event) Equals</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Equals</span><span class="p">(</span><span class="nx">other</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#bool"><span class="kt">bool</span></a></pre>
+  <p>Equals 判断当前事件与另一个事件是否相等。
+<p>相等性仅基于事件名称比较，不比较 data 字段。
+若 other 为 nil，始终返回 false。
+<p>这是 Go 惯用的相等性判断方法（Go 不支持运算符重载）。
+<h5 id="Event.GetData">func (*Event) GetData</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">GetData</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#any"><span class="kt">any</span></a></pre>
+  <p>GetData 返回事件携带的数据。
+<p>如果事件创建时未提供 data 参数或传入了 nil，则返回 nil。
+调用者应自行对返回值进行类型断言以获取原始类型。
+<h5 id="Event.GetName">func (*Event) GetName</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">GetName</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>GetName 返回事件的名称字符串。
+<p>名称由 NewEvent 创建时指定，在 Event 的整个生命周期内保持不变。
+<h5 id="Event.String">func (*Event) String</h5>
+  
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><span class="nf">String</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a></pre>
+  <p>String 返回事件的字符串表示，格式为 Event{name=&quot;...&quot;, data=...}。
+<p>该方法实现了 fmt.Stringer 接口，便于调试和日志输出。
+<h4 id="EventEngine">type EventEngine</h4>
     
     <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">EventEngine</span><span class="w"> </span><span class="kd">struct</span><span class="w"> </span><span class="p">{</span><span class="w">
 </span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
@@ -95,18 +159,18 @@ eng.Publish(Event.New(&quot;task.created&quot;, taskID))
 <li>优雅关闭，等待所有进行中的事件处理完成
 <li>监听器 panic 自动恢复，保障引擎稳定性
 </ul>
-<p>EventEngine 通过 New 函数创建并自动启动，通过 Stop 方法安全关闭。
+<p>EventEngine 通过 NewEventEngine 函数创建并自动启动，通过 Stop 方法安全关闭。
 零值不可直接使用。
-<h5 id="New">func New</h5>
+<h5 id="NewEventEngine">func NewEventEngine</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">New</span><span class="p">(</span><span class="nx">workers</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">,</span><span class="w"> </span><span class="nx">queueSize</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a></pre>
-  <p>New 创建并启动一个事件引擎。
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">NewEventEngine</span><span class="p">(</span><span class="nx">workers</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">,</span><span class="w"> </span><span class="nx">queueSize</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a></pre>
+  <p>NewEventEngine 创建并启动一个事件引擎。
 <p>workers 指定最大并发 worker 数量，必须为正整数。若传入 ≤0，自动取 1。
 queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传入 ≤0，使用 defaultQueueSize（4096）。
 <p>引擎在创建时即启动主循环 goroutine，调用方应在不再需要引擎时调用 Stop 进行清理。
 <h5 id="EventEngine.AddImmediateListener">func (*EventEngine) AddImmediateListener</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">AddImmediateListener</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">,</span><span class="w"> </span><span class="nx">handler</span><span class="w"> </span><a href="#HandlerFunc"><span class="nx">HandlerFunc</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">AddImmediateListener</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">,</span><span class="w"> </span><span class="nx">handler</span><span class="w"> </span><a href="#HandlerFunc"><span class="nx">HandlerFunc</span></a><span class="p">)</span></pre>
   <p>AddImmediateListener 向引擎注册一个事件监听器。
 <p>该方法线程安全，可在引擎运行时动态调用。
 注册的监听器将在匹配事件被 dispatch 时同步调用
@@ -115,7 +179,7 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
 如需执行耗时操作，建议在 handler 内部启动新的 goroutine。
 <h5 id="EventEngine.Publish">func (*EventEngine) Publish</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Publish</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Publish</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
   <p>Publish 以非阻塞方式向事件队列发布一个事件。
 <p>如果队列有空间，事件立即入队并返回；
 如果队列已满，事件被静默丢弃，同时打印警告日志。
@@ -124,14 +188,14 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
 如需获取入队失败的明确反馈，请使用 PublishTry。
 <h5 id="EventEngine.PublishBlocking">func (*EventEngine) PublishBlocking</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishBlocking</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishBlocking</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
   <p>PublishBlocking 以阻塞方式向事件队列发布一个事件。
 <p>调用方 goroutine 会阻塞直到事件成功入队，或引擎通过 Stop 关闭。
 适合发布者需要确保事件不丢失的场景。
 <p>注意：如果引擎已停止，此方法静默返回（事件被丢弃）。
 <h5 id="EventEngine.PublishTry">func (*EventEngine) PublishTry</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishTry</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">eng</span><span class="w"> </span><span class="o">*</span><a href="#EventEngine"><span class="nx">EventEngine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">PublishTry</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
   <p>PublishTry 尝试向事件队列发布一个事件，不阻塞。
 <p>如果事件成功入队，返回 nil；
 如果队列已满无法立即入队，返回 ErrQueueFull。
@@ -158,7 +222,7 @@ queueSize 为可选参数，指定事件队列的缓冲大小。若不传或传�
   <p>Workers 返回引擎配置的 worker 数量。
 <h4 id="HandlerFunc">type HandlerFunc</h4>
     
-    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">HandlerFunc</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="../Event"><span class="nx">Event</span></a><span class="p">.</span><a href="../Event#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
+    <pre class="chroma"><span class="kd">type</span><span class="w"> </span><span class="nx">HandlerFunc</span><span class="w"> </span><span class="kd">func</span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Event"><span class="nx">Event</span></a><span class="p">)</span></pre>
     <p>HandlerFunc 是事件监听器的回调函数签名。
 <p>每个注册到引擎的监听器必须符合此签名。
 监听器在独立的 goroutine 中执行，如果发生 panic 会被引擎自动恢复，
