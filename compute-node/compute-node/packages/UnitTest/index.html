@@ -21,28 +21,8 @@
 <pre class="chroma"><span class="kn">import</span><span class="w"> </span><span class="s">&#34;compute-node/packages/UnitTest&#34;</span></pre>
 <h3 id="pkg-index">Index</h3>
 <ul>
-  <li><a href="#RunAll">func RunAll()</a></li>
-  <li><a href="#TestEngineConcurrentPublish">func TestEngineConcurrentPublish(t *T)</a></li>
-  <li><a href="#TestEngineConcurrentPublishBlocking">func TestEngineConcurrentPublishBlocking(t *T)</a></li>
-  <li><a href="#TestEngineCreation">func TestEngineCreation(t *T)</a></li>
-  <li><a href="#TestEngineDynamicListener">func TestEngineDynamicListener(t *T)</a></li>
-  <li><a href="#TestEngineHandlerPanic">func TestEngineHandlerPanic(t *T)</a></li>
-  <li><a href="#TestEngineLargePayload">func TestEngineLargePayload(t *T)</a></li>
-  <li><a href="#TestEngineMultipleEventTypes">func TestEngineMultipleEventTypes(t *T)</a></li>
-  <li><a href="#TestEngineMultipleListeners">func TestEngineMultipleListeners(t *T)</a></li>
-  <li><a href="#TestEngineNoListener">func TestEngineNoListener(t *T)</a></li>
-  <li><a href="#TestEnginePerformance">func TestEnginePerformance(t *T)</a></li>
-  <li><a href="#TestEnginePublishAndDispatch">func TestEnginePublishAndDispatch(t *T)</a></li>
-  <li><a href="#TestEnginePublishBlocking">func TestEnginePublishBlocking(t *T)</a></li>
-  <li><a href="#TestEnginePublishTry">func TestEnginePublishTry(t *T)</a></li>
-  <li><a href="#TestEngineQueueLen">func TestEngineQueueLen(t *T)</a></li>
-  <li><a href="#TestEngineStopBehavior">func TestEngineStopBehavior(t *T)</a></li>
-  <li><a href="#TestEngineStopDrainsQueue">func TestEngineStopDrainsQueue(t *T)</a></li>
-  <li><a href="#TestEventBasic">func TestEventBasic(t *T)</a></li>
-  <li><a href="#TestEventEqualityWithData">func TestEventEqualityWithData(t *T)</a></li>
-  <li><a href="#TestEventEquals">func TestEventEquals(t *T)</a></li>
-  <li><a href="#TestEventNewVariants">func TestEventNewVariants(t *T)</a></li>
-  <li><a href="#TestEventStringFormat">func TestEventStringFormat(t *T)</a></li>
+  <li><a href="#RunEventEngineTests">func RunEventEngineTests() (passed, failed int)</a></li>
+  <li><a href="#RunSuite">func RunSuite(title string, tests []testCase) (passed, failed int)</a></li>
   <li>
       <a href="#T">type T</a>
       <ul>
@@ -60,74 +40,13 @@
       </li>
   </ul><h3 id="pkg-functions">Functions</h3>
   
-  <h4 id="RunAll">func RunAll</h4>
+  <h4 id="RunEventEngineTests">func RunEventEngineTests</h4>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">RunAll</span><span class="p">()</span></pre>
-  <p>RunAll 运行所有测试并输出统计结果。
-<h4 id="TestEngineConcurrentPublish">func TestEngineConcurrentPublish</h4>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">RunEventEngineTests</span><span class="p">()</span><span class="w"> </span><span class="p">(</span><span class="nx">passed</span><span class="p">,</span><span class="w"> </span><span class="nx">failed</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span></pre>
+  <p>RunEventEngineTests 执行所有 Event / EventEngine 测试。
+<h4 id="RunSuite">func RunSuite</h4>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineConcurrentPublish</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineConcurrentPublishBlocking">func TestEngineConcurrentPublishBlocking</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineConcurrentPublishBlocking</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineCreation">func TestEngineCreation</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineCreation</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineDynamicListener">func TestEngineDynamicListener</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineDynamicListener</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineHandlerPanic">func TestEngineHandlerPanic</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineHandlerPanic</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineLargePayload">func TestEngineLargePayload</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineLargePayload</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineMultipleEventTypes">func TestEngineMultipleEventTypes</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineMultipleEventTypes</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineMultipleListeners">func TestEngineMultipleListeners</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineMultipleListeners</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <p>TestEngineMultipleListeners  测试listener
-<h4 id="TestEngineNoListener">func TestEngineNoListener</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineNoListener</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEnginePerformance">func TestEnginePerformance</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePerformance</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEnginePublishAndDispatch">func TestEnginePublishAndDispatch</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePublishAndDispatch</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEnginePublishBlocking">func TestEnginePublishBlocking</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePublishBlocking</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEnginePublishTry">func TestEnginePublishTry</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEnginePublishTry</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineQueueLen">func TestEngineQueueLen</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineQueueLen</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineStopBehavior">func TestEngineStopBehavior</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineStopBehavior</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEngineStopDrainsQueue">func TestEngineStopDrainsQueue</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEngineStopDrainsQueue</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEventBasic">func TestEventBasic</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventBasic</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEventEqualityWithData">func TestEventEqualityWithData</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventEqualityWithData</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEventEquals">func TestEventEquals</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventEquals</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEventNewVariants">func TestEventNewVariants</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventNewVariants</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
-  <h4 id="TestEventStringFormat">func TestEventStringFormat</h4>
-  
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">TestEventStringFormat</span><span class="p">(</span><span class="nx">t</span><span class="w"> </span><span class="o">*</span><a href="#T"><span class="nx">T</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">RunSuite</span><span class="p">(</span><span class="nx">title</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span><span class="w"> </span><span class="nx">tests</span><span class="w"> </span><span class="p">[]</span><span class="nx">testCase</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nx">passed</span><span class="p">,</span><span class="w"> </span><span class="nx">failed</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">)</span></pre>
   <h3 id="pkg-types">Types</h3>
   
   <h4 id="T">type T</h4>
