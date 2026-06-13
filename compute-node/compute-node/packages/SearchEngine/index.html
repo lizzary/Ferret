@@ -22,12 +22,13 @@
 <p>Package SearchEngine 基于 tantivy-go 的全文搜索引擎封装。
 <p>使用前准备：
 <ol>
+<li>在 ferret/compute-node 目录中运行 go get github.com/anyproto/tantivy-go
 <li>从 <a href="https://winlibs.com/">https://winlibs.com/</a> 下载 GCC 16.1.0 (with POSIX threads) + MinGW-w64 14.0.0 (UCRT)
-<li>将上面的压缩包解压到一个任意目录，并将mingw64/bin添加到path环境变量
-<li>在项目目录中运行 go get github.com/anyproto/tantivy-go@v1.0.6
-<li>从 <a href="https://github.com/anyproto/tantivy-go/releases">https://github.com/anyproto/tantivy-go/releases</a> 下载 windows-amd64.tar.gz并解压
+<li>将上面的压缩包解压到一个任意目录，并将 mingw64/bin 添加到 PATH 环境变量
+<li>在 compute-node 项目根目录中运行 go get github.com/anyproto/tantivy-go@v1.0.6
+<li>从 <a href="https://github.com/anyproto/tantivy-go/releases">https://github.com/anyproto/tantivy-go/releases</a> 下载 windows-amd64.tar.gz 并解压
 <li>将 libtantivy_go.a 放入 mingw64\lib 目录
-<li>编译: CGO_ENABLED=1 go build .
+<li>编译: go build -o main.exe .\main.go
 </ol>
 <p>快速开始见本文件底部的 Example() 函数。
 <h3 id="pkg-index">Index</h3>
@@ -36,13 +37,13 @@
   <li>
       <a href="#Engine">type Engine</a>
       <ul>
-          <li><a href="#New">func New(indexPath string) (*Engine, error)</a></li>
+          <li><a href="#New">func New(indexPath string) (_ *Engine, err error)</a></li>
           <li><a href="#Engine.Add">func (e *Engine) Add(id, title, content string) error</a></li>
           <li><a href="#Engine.Close">func (e *Engine) Close() error</a></li>
           <li><a href="#Engine.Delete">func (e *Engine) Delete(ids ...string) error</a></li>
           <li><a href="#Engine.IndexFiles">func (e *Engine) IndexFiles(dir string) (int, error)</a></li>
           <li><a href="#Engine.NumDocs">func (e *Engine) NumDocs() (uint64, error)</a></li>
-          <li><a href="#Engine.Search">func (e *Engine) Search(query string, limit uintptr) ([]Hit, error)</a></li>
+          <li><a href="#Engine.Search">func (e *Engine) Search(query string, limit uintptr) (hits []Hit, err error)</a></li>
           </ul>
       </li>
   <li>
@@ -69,7 +70,7 @@
 <li>生成 5 个示例 .txt 文件
 <li>将文件内容建立索引
 <li>执行搜索并打印结果
-<li>清理
+<li>删除与统计
 </ol>
 <h3 id="pkg-types">Types</h3>
   
@@ -79,14 +80,16 @@
 </span><span class="w">	</span><span class="c1">// contains filtered or unexported fields</span><span class="w">
 </span><span class="p">}</span></pre>
     <p>Engine 封装 tantivy 索引的创建、写入、搜索与关闭。
+零值不可用，必须通过 New() 创建。
 <h5 id="New">func New</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">New</span><span class="p">(</span><span class="nx">indexPath</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">,</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="nf">New</span><span class="p">(</span><span class="nx">indexPath</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nx">_</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
   <p>New 初始化 tantivy 运行时、创建 schema 并在指定路径打开（或创建）索引。
 <ul>
 <li>indexPath: 索引持久化目录，如 &quot;./search_index&quot;
 <li>首次调用会创建新索引；后续调用会打开已有索引
 <li>返回的 Engine 使用完毕后必须调用 Close()
+<li>LibInit 内部使用 sync.Once，多次调用 New() 是安全的
 </ul>
 <h5 id="Engine.Add">func (*Engine) Add</h5>
   
@@ -95,7 +98,7 @@
 <h5 id="Engine.Close">func (*Engine) Close</h5>
   
   <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Close</span><span class="p">()</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
-  <p>Close 等待合并完成并释放所有资源。
+  <p>Close 等待合并完成并释放所有资源。重复调用安全。
 <h5 id="Engine.Delete">func (*Engine) Delete</h5>
   
   <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Delete</span><span class="p">(</span><span class="nx">ids</span><span class="w"> </span><span class="o">...</span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a></pre>
@@ -104,13 +107,15 @@
   
   <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">IndexFiles</span><span class="p">(</span><span class="nx">dir</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">)</span><span class="w"> </span><span class="p">(</span><a href="https://pkg.go.dev/builtin#int"><span class="kt">int</span></a><span class="p">,</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
   <p>IndexFiles 读取 dir 下所有 .txt 文件，以文件名为标题、文件内容为正文建立索引。
+返回成功索引的文件数。
 <h5 id="Engine.NumDocs">func (*Engine) NumDocs</h5>
   
   <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">NumDocs</span><span class="p">()</span><span class="w"> </span><span class="p">(</span><a href="https://pkg.go.dev/builtin#uint64"><span class="kt">uint64</span></a><span class="p">,</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
   <p>NumDocs 返回当前已索引的文档数。
+调用前确保 Engine 已通过 New() 成功创建。
 <h5 id="Engine.Search">func (*Engine) Search</h5>
   
-  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Search</span><span class="p">(</span><span class="nx">query</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span><span class="w"> </span><span class="nx">limit</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#uintptr"><span class="kt">uintptr</span></a><span class="p">)</span><span class="w"> </span><span class="p">([]</span><a href="#Hit"><span class="nx">Hit</span></a><span class="p">,</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
+  <pre class="chroma"><span class="kd">func</span><span class="w"> </span><span class="p">(</span><span class="nx">e</span><span class="w"> </span><span class="o">*</span><a href="#Engine"><span class="nx">Engine</span></a><span class="p">)</span><span class="w"> </span><span class="nf">Search</span><span class="p">(</span><span class="nx">query</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#string"><span class="kt">string</span></a><span class="p">,</span><span class="w"> </span><span class="nx">limit</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#uintptr"><span class="kt">uintptr</span></a><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nx">hits</span><span class="w"> </span><span class="p">[]</span><a href="#Hit"><span class="nx">Hit</span></a><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><a href="https://pkg.go.dev/builtin#error"><span class="kt">error</span></a><span class="p">)</span></pre>
   <p>Search 在 title 和 content 字段中搜索，返回最多 limit 条结果。
 <h4 id="Hit">type Hit</h4>
     
