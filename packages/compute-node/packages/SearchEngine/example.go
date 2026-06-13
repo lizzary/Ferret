@@ -1,12 +1,13 @@
 // Package SearchEngine 基于 tantivy-go 的全文搜索引擎封装。
 //
 // 使用前准备：
-//  1. 从 https://winlibs.com/ 下载 GCC 16.1.0 (with POSIX threads) + MinGW-w64 14.0.0 (UCRT)
-//  2. 将上面的压缩包解压到一个任意目录，并将mingw64/bin添加到path环境变量
-//  3. 在项目目录中运行 go get github.com/anyproto/tantivy-go@v1.0.6
-//  4. 从 https://github.com/anyproto/tantivy-go/releases 下载 windows-amd64.tar.gz并解压
-//  5. 将 libtantivy_go.a 放入 mingw64\lib 目录
-//  6. 编译: CGO_ENABLED=1 go build .
+//  1. 在 ferret/compute-node 目录中运行 go get github.com/anyproto/tantivy-go
+//  2. 从 https://winlibs.com/ 下载 GCC 16.1.0 (with POSIX threads) + MinGW-w64 14.0.0 (UCRT)
+//  3. 将上面的压缩包解压到一个任意目录，并将 mingw64/bin 添加到 PATH 环境变量
+//  4. 在 compute-node 项目根目录中运行 go get github.com/anyproto/tantivy-go@v1.0.6
+//  5. 从 https://github.com/anyproto/tantivy-go/releases 下载 windows-amd64.tar.gz 并解压
+//  6. 将 libtantivy_go.a 放入 mingw64\lib 目录
+//  7. 编译: go build -o main.exe .\main.go
 //
 // 快速开始见本文件底部的 Example() 函数。
 package SearchEngine
@@ -36,10 +37,14 @@ const (
 // ============================================================================
 
 // Engine 封装 tantivy 索引的创建、写入、搜索与关闭。
+// 零值不可用，必须通过 New() 创建。
 type Engine struct {
 	ctx    *tantivygo.TantivyContext
 	schema *tantivygo.Schema
 	path   string
+
+	// closed 标记是否已关闭，防止重复 Close 导致 CGo 双重释放（堆损坏 0xC0000374）。
+	closed bool
 }
 
 // New 初始化 tantivy 运行时、创建 schema 并在指定路径打开（或创建）索引。
@@ -47,68 +52,96 @@ type Engine struct {
 //   - indexPath: 索引持久化目录，如 "./search_index"
 //   - 首次调用会创建新索引；后续调用会打开已有索引
 //   - 返回的 Engine 使用完毕后必须调用 Close()
-func New(indexPath string) (*Engine, error) {
+//   - LibInit 内部使用 sync.Once，多次调用 New() 是安全的
+func New(indexPath string) (_ *Engine, err error) {
+	// 1) 初始化 tantivy 原生库（sync.Once，可重复调用）
 	if err := tantivygo.LibInit(true, true, "off"); err != nil {
-		return nil, fmt.Errorf("LibInit: %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: LibInit: %w", err)
 	}
 
+	// 2) 构建 schema
 	builder, err := tantivygo.NewSchemaBuilder()
 	if err != nil {
-		return nil, fmt.Errorf("NewSchemaBuilder: %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: NewSchemaBuilder: %w", err)
 	}
 
-	// title: 短文本，全文索引，存储原文，按位置记录
 	if err := builder.AddTextField(FieldTitle, true, true, false,
 		tantivygo.IndexRecordOptionWithFreqsAndPositions,
 		tantivygo.TokenizerSimple); err != nil {
-		return nil, fmt.Errorf("AddTextField(title): %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: AddTextField(%s): %w", FieldTitle, err)
 	}
 
-	// content: 正文，全文索引，存储原文，按位置记录
 	if err := builder.AddTextField(FieldContent, true, true, false,
 		tantivygo.IndexRecordOptionWithFreqsAndPositions,
 		tantivygo.TokenizerSimple); err != nil {
-		return nil, fmt.Errorf("AddTextField(content): %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: AddTextField(%s): %w", FieldContent, err)
 	}
 
-	// id: 唯一标识，不索引，原样存储（raw tokenizer）
 	if err := builder.AddTextField(FieldID, true, false, false,
 		tantivygo.IndexRecordOptionBasic,
 		tantivygo.TokenizerRaw); err != nil {
-		return nil, fmt.Errorf("AddTextField(id): %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: AddTextField(%s): %w", FieldID, err)
 	}
 
 	schema, err := builder.BuildSchema()
 	if err != nil {
-		return nil, fmt.Errorf("BuildSchema: %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: BuildSchema: %w", err)
 	}
 
+	// 3) 创建/打开索引
 	ctx, err := tantivygo.NewTantivyContextWithSchema(indexPath, schema)
 	if err != nil {
-		return nil, fmt.Errorf("NewTantivyContextWithSchema: %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: NewTantivyContextWithSchema(%s): %w", indexPath, err)
 	}
 
-	// 注册 tokenizer — 必须使用 schema 中引用的 tokenizer 名
+	// ——— 从此处开始 ctx 已分配，出错必须 Close() ———
+	// 使用 defer 捕获后续错误并安全关闭（避免 double-close 导致 0xC0000374）
+	cleanup := true
+	defer func() {
+		if cleanup {
+			if closeErr := ctx.Close(); closeErr != nil {
+				// Close 失败时不能重复尝试，仅记录
+				err = fmt.Errorf("%w; Close: %v", err, closeErr)
+			}
+		}
+	}()
+
+	// 4) 注册 tokenizer（必须与 schema 中引用的 tokenizer 名一致）
 	if err := ctx.RegisterTextAnalyzerSimple(tantivygo.TokenizerSimple, 500, tantivygo.English); err != nil {
-		ctx.Close()
-		return nil, fmt.Errorf("RegisterTextAnalyzerSimple: %w", err)
-	}
-	if err := ctx.RegisterTextAnalyzerRaw(tantivygo.TokenizerRaw); err != nil {
-		ctx.Close()
-		return nil, fmt.Errorf("RegisterTextAnalyzerRaw: %w", err)
+		return nil, fmt.Errorf("SearchEngine.New: RegisterTextAnalyzerSimple(%s): %w", tantivygo.TokenizerSimple, err)
 	}
 
+	if err := ctx.RegisterTextAnalyzerRaw(tantivygo.TokenizerRaw); err != nil {
+		return nil, fmt.Errorf("SearchEngine.New: RegisterTextAnalyzerRaw(%s): %w", tantivygo.TokenizerRaw, err)
+	}
+
+	cleanup = false // 所有权转移给 Engine，不再由 defer 关闭
 	return &Engine{ctx: ctx, schema: schema, path: indexPath}, nil
 }
 
-// Close 等待合并完成并释放所有资源。
+// Close 等待合并完成并释放所有资源。重复调用安全。
 func (e *Engine) Close() error {
+	if e == nil || e.closed {
+		return nil
+	}
+	e.closed = true
+	if e.ctx == nil {
+		return nil
+	}
 	return e.ctx.Close()
 }
 
 // NumDocs 返回当前已索引的文档数。
+// 调用前确保 Engine 已通过 New() 成功创建。
 func (e *Engine) NumDocs() (uint64, error) {
-	return e.ctx.NumDocs()
+	if e == nil || e.ctx == nil {
+		return 0, fmt.Errorf("SearchEngine.NumDocs: Engine 未初始化")
+	}
+	n, err := e.ctx.NumDocs()
+	if err != nil {
+		return 0, fmt.Errorf("SearchEngine.NumDocs: %w", err)
+	}
+	return n, nil
 }
 
 // ============================================================================
@@ -117,22 +150,55 @@ func (e *Engine) NumDocs() (uint64, error) {
 
 // Add 添加一篇文档。id/标题/正文会写入三个字段。
 func (e *Engine) Add(id, title, content string) error {
+	if e == nil || e.ctx == nil {
+		return fmt.Errorf("SearchEngine.Add: Engine 未初始化")
+	}
+	if id == "" {
+		return fmt.Errorf("SearchEngine.Add: id 不能为空")
+	}
+
 	doc := tantivygo.NewDocument()
+	if doc == nil {
+		return fmt.Errorf("SearchEngine.Add: NewDocument 返回 nil")
+	}
+
+	// 任一 AddField 失败时释放 doc 防止内存泄漏
+	var added bool
+	defer func() {
+		if !added {
+			doc.Free()
+		}
+	}()
+
 	if err := doc.AddField(id, e.ctx, FieldID); err != nil {
-		return fmt.Errorf("AddField(id): %w", err)
+		return fmt.Errorf("SearchEngine.Add: doc.AddField(%s, %s): %w", id, FieldID, err)
 	}
 	if err := doc.AddField(title, e.ctx, FieldTitle); err != nil {
-		return fmt.Errorf("AddField(title): %w", err)
+		return fmt.Errorf("SearchEngine.Add: doc.AddField(%s, %s): %w", title, FieldTitle, err)
 	}
 	if err := doc.AddField(content, e.ctx, FieldContent); err != nil {
-		return fmt.Errorf("AddField(content): %w", err)
+		return fmt.Errorf("SearchEngine.Add: doc.AddField(%s): %w", FieldContent, err)
 	}
-	return e.ctx.AddAndConsumeDocuments(doc)
+
+	if err := e.ctx.AddAndConsumeDocuments(doc); err != nil {
+		return fmt.Errorf("SearchEngine.Add: AddAndConsumeDocuments(%s): %w", id, err)
+	}
+	added = true // doc 已被 tantivy 接管，不要 Free
+	return nil
 }
 
 // Delete 按 ID 删除文档。
 func (e *Engine) Delete(ids ...string) error {
-	return e.ctx.DeleteDocuments(FieldID, ids...)
+	if e == nil || e.ctx == nil {
+		return fmt.Errorf("SearchEngine.Delete: Engine 未初始化")
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	if err := e.ctx.DeleteDocuments(FieldID, ids...); err != nil {
+		return fmt.Errorf("SearchEngine.Delete: DeleteDocuments(%v): %w", ids, err)
+	}
+	return nil
 }
 
 // ============================================================================
@@ -148,7 +214,14 @@ type Hit struct {
 }
 
 // Search 在 title 和 content 字段中搜索，返回最多 limit 条结果。
-func (e *Engine) Search(query string, limit uintptr) ([]Hit, error) {
+func (e *Engine) Search(query string, limit uintptr) (hits []Hit, err error) {
+	if e == nil || e.ctx == nil {
+		return nil, fmt.Errorf("SearchEngine.Search: Engine 未初始化")
+	}
+	if query == "" {
+		return nil, fmt.Errorf("SearchEngine.Search: query 不能为空")
+	}
+
 	sCtx := tantivygo.NewSearchContextBuilder().
 		SetQuery(query).
 		SetDocsLimit(limit).
@@ -159,26 +232,37 @@ func (e *Engine) Search(query string, limit uintptr) ([]Hit, error) {
 
 	result, err := e.ctx.Search(sCtx)
 	if err != nil {
-		return nil, fmt.Errorf("Search: %w", err)
+		return nil, fmt.Errorf("SearchEngine.Search: ctx.Search(%q): %w", query, err)
 	}
 	defer result.Free()
 
 	size, err := result.GetSize()
 	if err != nil {
-		return nil, fmt.Errorf("GetSize: %w", err)
+		return nil, fmt.Errorf("SearchEngine.Search: result.GetSize: %w", err)
 	}
 
-	hits := make([]Hit, 0, size)
+	hits = make([]Hit, 0, size)
 	for i := uint64(0); i < size; i++ {
 		doc, err := result.Get(i)
 		if err != nil {
+			// 单条文档获取失败不中断全部结果，但记录日志
+			fmt.Fprintf(os.Stderr, "[WARN] SearchEngine.Search: result.Get(%d): %v\n", i, err)
 			continue
 		}
+		if doc == nil {
+			fmt.Fprintf(os.Stderr, "[WARN] SearchEngine.Search: result.Get(%d) 返回 nil 文档\n", i)
+			continue
+		}
+
 		jsonStr, err := doc.ToJson(e.ctx, FieldID, FieldTitle, FieldContent)
+		// doc 使用完毕立即释放（无论 ToJson 成功与否）
 		doc.Free()
+
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] SearchEngine.Search: doc.ToJson(%d): %v\n", i, err)
 			continue
 		}
+
 		hits = append(hits, parseHit(jsonStr))
 	}
 	return hits, nil
@@ -189,10 +273,15 @@ func (e *Engine) Search(query string, limit uintptr) ([]Hit, error) {
 // ============================================================================
 
 // IndexFiles 读取 dir 下所有 .txt 文件，以文件名为标题、文件内容为正文建立索引。
+// 返回成功索引的文件数。
 func (e *Engine) IndexFiles(dir string) (int, error) {
+	if e == nil || e.ctx == nil {
+		return 0, fmt.Errorf("SearchEngine.IndexFiles: Engine 未初始化")
+	}
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return 0, fmt.Errorf("ReadDir: %w", err)
+		return 0, fmt.Errorf("SearchEngine.IndexFiles: ReadDir(%s): %w", dir, err)
 	}
 
 	count := 0
@@ -201,9 +290,10 @@ func (e *Engine) IndexFiles(dir string) (int, error) {
 			continue
 		}
 
-		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
+		filePath := filepath.Join(dir, entry.Name())
+		data, err := os.ReadFile(filePath)
 		if err != nil {
-			return count, fmt.Errorf("ReadFile(%s): %w", entry.Name(), err)
+			return count, fmt.Errorf("SearchEngine.IndexFiles: ReadFile(%s): %w", filePath, err)
 		}
 
 		id := strings.TrimSuffix(entry.Name(), ".txt")
@@ -211,7 +301,7 @@ func (e *Engine) IndexFiles(dir string) (int, error) {
 		content := string(data)
 
 		if err := e.Add(id, title, content); err != nil {
-			return count, fmt.Errorf("Add(%s): %w", id, err)
+			return count, fmt.Errorf("SearchEngine.IndexFiles: Add(%s): %w", id, err)
 		}
 		count++
 	}
@@ -219,10 +309,10 @@ func (e *Engine) IndexFiles(dir string) (int, error) {
 }
 
 // ============================================================================
-// 辅助
+// 辅助（简易 JSON 解析，避免引入 encoding/json 依赖）
 // ============================================================================
 
-// parseHit 从 tantivy 返回的 JSON 中提取字段（简易解析，避免引入 encoding/json 依赖）。
+// parseHit 从 tantivy 返回的 JSON 中提取字段。
 // tantivy 返回格式示例：
 //
 //	{"id":"1","title":"Rust","content":"...","score":2.4,"highlights":[...]}
@@ -276,17 +366,25 @@ Example 演示端到端流程:
  2. 生成 5 个示例 .txt 文件
  3. 将文件内容建立索引
  4. 执行搜索并打印结果
- 5. 清理
+ 5. 删除与统计
 */
 func Example() {
 	// ——— 1. 准备目录 ———
 	dataDir := filepath.Join(".", "example-docs")
 	indexDir := filepath.Join(".", "example-index")
-	os.RemoveAll(dataDir)
-	os.RemoveAll(indexDir)
-	os.MkdirAll(dataDir, 0755)
+
+	// 清理旧数据（忽略错误：目录可能不存在）
+	_ = os.RemoveAll(dataDir)
+	_ = os.RemoveAll(indexDir)
+
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] 创建目录 %s 失败: %v\n", dataDir, err)
+		return
+	}
+
 	// ——— 2. 生成 5 个 .txt 文件 ———
-	files := []struct{ name, content string }{
+	type docFile struct{ name, content string }
+	files := []docFile{
 		{
 			"Rust Programming Language.txt",
 			"Rust is a systems programming language focused on safety, speed, and concurrency. " +
@@ -321,34 +419,42 @@ func Example() {
 		},
 	}
 
-	for _, f := range files {
-		path := filepath.Join(dataDir, f.name)
-		if err := os.WriteFile(path, []byte(f.content), 0644); err != nil {
-			fmt.Printf("创建文件失败 %s: %v\n", f.name, err)
+	for i := range files {
+		path := filepath.Join(dataDir, files[i].name)
+		if err := os.WriteFile(path, []byte(files[i].content), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "[ERROR] 创建文件失败 %s: %v\n", files[i].name, err)
 			return
 		}
-		fmt.Printf("  ✓ 创建文件: %s\n", f.name)
+		fmt.Printf("  ✓ 创建文件: %s\n", files[i].name)
 	}
 	fmt.Printf("\n已生成 %d 个 .txt 文件: %s\n\n", len(files), dataDir)
 
 	// ——— 3. 初始化搜索引擎 ———
 	engine, err := New(indexDir)
 	if err != nil {
-		fmt.Printf("初始化引擎失败: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] 初始化搜索引擎失败: %v\n", err)
 		return
 	}
-	defer engine.Close()
+	defer func() {
+		if closeErr := engine.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] 引擎关闭时出错: %v\n", closeErr)
+		}
+	}()
 	fmt.Println("✓ 搜索引擎初始化完成")
 
 	// ——— 4. 将所有 .txt 文件索引进引擎 ———
 	n, err := engine.IndexFiles(dataDir)
 	if err != nil {
-		fmt.Printf("索引文件失败: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] 索引文件失败: %v\n", err)
 		return
 	}
 	fmt.Printf("✓ 已索引 %d 篇文档\n", n)
 
-	docCount, _ := engine.NumDocs()
+	docCount, err := engine.NumDocs()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] 获取文档数失败: %v\n", err)
+		return
+	}
 	fmt.Printf("✓ 索引中文档总数: %d\n\n", docCount)
 
 	// ——— 5. 执行搜索 ———
@@ -364,23 +470,22 @@ func Example() {
 	fmt.Println("═══════════════════════════════════════════════")
 
 	for _, q := range queries {
-		fmt.Printf("\n🔍 搜索: \"%s\"\n", q)
+		fmt.Printf("\n搜索: %q\n", q)
 		fmt.Println("───────────────────────────────────────────────")
 
 		hits, err := engine.Search(q, 5)
 		if err != nil {
-			fmt.Printf("  搜索失败: %v\n", err)
+			fmt.Fprintf(os.Stderr, "[ERROR] 搜索失败 %q: %v\n", q, err)
 			continue
 		}
 
 		if len(hits) == 0 {
-			fmt.Println("  没有找到匹配的文档")
+			fmt.Println("  (无匹配结果)")
 			continue
 		}
 
 		for i, h := range hits {
 			fmt.Printf("  #%d  [score: %.4f]  %s\n", i+1, h.Score, h.Title)
-			// 截取正文前 120 个字作为摘要
 			snippet := h.Content
 			if len(snippet) > 120 {
 				snippet = snippet[:120] + "..."
@@ -393,20 +498,25 @@ func Example() {
 	fmt.Println("\n═══════════════════════════════════════════════")
 	fmt.Println("              删除操作")
 	fmt.Println("═══════════════════════════════════════════════")
-	fmt.Println()
 
 	idToDelete := "Go Programming Language"
-	fmt.Printf("删除前文档数: ")
-	if c, err := engine.NumDocs(); err == nil {
+	fmt.Printf("\n删除前文档数: ")
+	if c, err := engine.NumDocs(); err != nil {
+		fmt.Fprintf(os.Stderr, "\n[ERROR] NumDocs: %v\n", err)
+	} else {
 		fmt.Printf("%d\n", c)
 	}
+
 	if err := engine.Delete(idToDelete); err != nil {
-		fmt.Printf("删除失败: %v\n", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] 删除失败: %v\n", err)
 	} else {
 		fmt.Printf("✓ 已删除: %s\n", idToDelete)
 	}
+
 	fmt.Printf("删除后文档数: ")
-	if c, err := engine.NumDocs(); err == nil {
+	if c, err := engine.NumDocs(); err != nil {
+		fmt.Fprintf(os.Stderr, "\n[ERROR] NumDocs: %v\n", err)
+	} else {
 		fmt.Printf("%d\n", c)
 	}
 
